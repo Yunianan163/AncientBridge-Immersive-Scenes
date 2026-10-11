@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<!-- WebSocket 公网地址拦截器 -->
+<script>
+(function() {
+    const OriginalWebSocket = window.WebSocket;
+    const PUBLIC_IP = '127.0.0.1';
+    window.WebSocket = function(url, protocols) {
+        if (typeof url === 'string') {
+            var wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            url = url.replace(/^ws:\/\/127\.0\.0\.1:\d+/, wsProto + '//' + window.location.host)
+                     .replace(/^wss:\/\/127\.0\.0\.1:\d+/, wsProto + '//' + window.location.host)
+                     .replace(/^ws:\/\/localhost:\d+/, wsProto + '//' + window.location.host);
+        }
+        return protocols ? new OriginalWebSocket(url, protocols) : new OriginalWebSocket(url);
+    };
+    window.WebSocket.prototype = OriginalWebSocket.prototype;
+    window.WebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
+    window.WebSocket.OPEN = OriginalWebSocket.OPEN;
+    window.WebSocket.CLOSING = OriginalWebSocket.CLOSING;
+    window.WebSocket.CLOSED = OriginalWebSocket.CLOSED;
+    console.log('[WS-HOOK] WebSocket 拦截器已启用，公网 IP: ' + PUBLIC_IP);
+})();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity Web融合项目</title>
+    <link rel="stylesheet" href="style.css?v=5">
+    <!-- Unity WebGL Loader -->
+
+</head>
+<body>
+    <!-- 背景音乐 -->
+    <audio id="bgm-audio" loop preload="auto" style="position:fixed;left:-9999px;top:0;width:0;height:0;opacity:0;pointer-events:none;">
+        <source src="/music/CHINA-%E6%98%A5%E9%A3%8E%20-%20%E5%BE%90%E6%A2%A6%E5%9C%86.mp3" type="audio/mpeg">
+        您的浏览器不支持 audio 标签。
+    </audio>
+    <script>
+        (function() {
+            var audio = document.getElementById('bgm-audio');
+            if (!audio) return;
+
+            function tryPlayBgm() {
+                audio.volume = 0.8;
+                console.log('[BGM inline] canplay 触发，尝试播放');
+                var p = audio.play();
+                if (p && p.catch) {
+                    p.catch(function(err) {
+                        console.log('[BGM inline] 自动播放被阻止，等待交互:', err && err.message);
+                    });
+                }
+            }
+
+            audio.addEventListener('canplay', tryPlayBgm, { once: true });
+            audio.addEventListener('error', function() {
+                console.error('[BGM inline] 音频加载失败，code:', audio.error ? audio.error.code : 'unknown');
+            });
+
+            // 任意用户交互时补一次播放
+            var resume = function() {
+                if (audio.paused) {
+                    console.log('[BGM inline] 用户交互，尝试恢复播放');
+                    audio.play().catch(function(e) {
+                        console.warn('[BGM inline] 用户交互后播放失败:', e);
+                    });
+                }
+                document.removeEventListener('click', resume);
+                document.removeEventListener('keydown', resume);
+            };
+            document.addEventListener('click', resume);
+            document.addEventListener('keydown', resume);
+        })();
+    </script>
+
+    <!-- Unity 嵌入区域 - 充满整个页面作为背景 -->
+    <div id="unity-container">
+        <canvas id="unity-canvas" width="1280" height="720" tabindex="-1"></canvas>
+        <div id="unity-loading">
+            <div class="unity-loading-spinner"></div>
+            <div class="unity-loading-text">Unity 场景加载中...</div>
+            <div class="unity-loading-progress">
+                <div class="unity-loading-progress-bar" id="unity-progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 中央消息显示 -->
+    <div id="center-message">等待指令...</div>
+
+
+    <!-- 语音导览面板 -->
+    <div id="voice-guide-panel" class="voice-guide-panel" style="display: none;">
+        <div class="voice-guide-avatar-float">
+            <img src="苏州双桥语音导览动图/第一张.png" alt="沧朔">
+        </div>
+        <div class="voice-guide-text-box">
+            <div class="voice-guide-text" id="voice-guide-text"></div>
+        </div>
+        <button class="voice-guide-confirm-btn" type="button" onclick="closeVoiceGuide()">确定</button>
+        <audio id="voice-guide-audio" preload="auto">
+            <source src="/robot-voice/开头解锁前.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <!-- 查看模型及介绍语音导览面板 -->
+    <div id="model-guide-panel" class="voice-guide-panel" style="display: none;">
+        <div class="voice-guide-avatar-float">
+            <img src="苏州双桥语音导览动图/第二张.png" alt="沧朔">
+        </div>
+        <div class="voice-guide-text-box">
+            <div class="voice-guide-text" id="model-guide-text"></div>
+        </div>
+        <button class="voice-guide-confirm-btn" type="button" onclick="closeModelGuide()">确定</button>
+        <audio id="model-guide-audio" preload="auto">
+            <source src="/robot-voice/点击查看模型及介绍面板.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <!-- 四季引导语音导览面板 -->
+    <div id="season-guide-panel" class="voice-guide-panel" style="display: none;">
+        <div class="voice-guide-avatar-float">
+            <img src="苏州双桥语音导览动图/第三张.png" alt="沧朔">
+        </div>
+        <div class="voice-guide-text-box">
+            <div class="voice-guide-text" id="season-guide-text"></div>
+        </div>
+        <button class="voice-guide-confirm-btn" type="button" onclick="closeSeasonGuide()">确定</button>
+        <audio id="season-guide-audio" preload="auto">
+            <source src="/robot-voice/再次点击查看模型及介绍按钮.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <!-- 秋天语音导览面板 -->
+    <div id="autumn-guide-panel" class="voice-guide-panel" style="display: none;">
+        <div class="voice-guide-avatar-float">
+            <img src="苏州双桥语音导览动图/第一张.png" alt="沧朔">
+        </div>
+        <div class="voice-guide-text-box">
+            <div class="voice-guide-text" id="autumn-guide-text"></div>
+        </div>
+        <button class="voice-guide-confirm-btn" type="button" onclick="closeAutumnGuide()">确定</button>
+        <audio id="autumn-guide-audio" preload="auto">
+            <source src="/robot-voice/点击秋天.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <!-- 冬天语音导览面板 -->
+    <div id="winter-guide-panel" class="voice-guide-panel" style="display: none;">
+        <div class="voice-guide-avatar-float">
+            <img src="苏州双桥语音导览动图/第二张.png" alt="沧朔">
+        </div>
+        <div class="voice-guide-text-box">
+            <div class="voice-guide-text" id="winter-guide-text"></div>
+        </div>
+        <button class="voice-guide-confirm-btn" type="button" onclick="closeWinterGuide()">确定</button>
+        <audio id="winter-guide-audio" preload="auto">
+            <source src="/robot-voice/点击冬天.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <!-- 靠近古桥彩蛋语音导览面板（顶部中央） -->
+    <div id="bridge-unlock-guide-panel" class="voice-guide-panel bridge-unlock-guide-panel" style="display: none;">
+        <div class="voice-guide-avatar-float">
+            <img src="苏州双桥语音导览动图/第三张.png" alt="沧朔">
+        </div>
+        <div class="voice-guide-text-box">
+            <div class="voice-guide-text" id="bridge-unlock-guide-text"></div>
+        </div>
+        <button class="voice-guide-confirm-btn" type="button" onclick="closeBridgeUnlockGuide()">确定</button>
+    </div>
+
+    <!-- 机器人操作提示后语音导览面板 -->
+    <div id="robot-action-guide-panel" class="voice-guide-panel" style="display: none;">
+        <div class="voice-guide-avatar-float">
+            <img src="苏州双桥语音导览动图/第一张.png" alt="沧朔">
+        </div>
+        <div class="voice-guide-text-box">
+            <div class="voice-guide-text" id="robot-action-guide-text"></div>
+        </div>
+        <button class="voice-guide-confirm-btn" type="button" onclick="closeRobotActionGuide()">确定</button>
+    </div>
+
+    <!-- 机器人出现在双桥上语音导览面板 -->
+    <div id="robot-appeared-guide-panel" class="voice-guide-panel" style="display: none;">
+        <div class="voice-guide-avatar-float">
+            <img src="苏州双桥语音导览动图/第二张.png" alt="沧朔">
+        </div>
+        <div class="voice-guide-text-box">
+            <div class="voice-guide-text" id="robot-appeared-guide-text"></div>
+        </div>
+        <button class="voice-guide-confirm-btn" type="button" onclick="closeRobotAppearedGuide()">确定</button>
+    </div>
+
+    <!-- 顶部模型提示 -->
+    <div id="model-hover-tip" class="model-hover-tip" style="display: none;">
+        鼠标悬浮在桥模型上出现有关桥的介绍，点击一下可固定介绍面板
+    </div>
+
+    <!-- 左侧：更多历史介绍窗口 -->
+    <div class="hud-panel locked-panel" id="unlock-intro-panel" style="display: none;">
+        <div class="panel-header">
+            <div class="unlock-panel-header-left">
+                <h3>更多历史介绍</h3>
+                <span class="unlock-status-badge locked" id="unlock-status-badge">待解锁</span>
+            </div>
+            <button class="panel-close-btn" type="button" onclick="closeUnlockIntroPanel()">×</button>
+        </div>
+
+        <div class="unlock-intro-tabs tabs-disabled" id="unlock-intro-tabs">
+            <button class="unlock-tab-btn active" type="button" onclick="switchUnlockIntroTab('basic')">基本信息</button>
+            <button class="unlock-tab-btn" type="button" onclick="switchUnlockIntroTab('history')">历史追溯</button>
+            <button class="unlock-tab-btn" type="button" onclick="switchUnlockIntroTab('culture')">文化内涵</button>
+            <button class="unlock-tab-btn" type="button" onclick="switchUnlockIntroTab('structure')">结构地势</button>
+            <button class="unlock-tab-btn" type="button" onclick="switchUnlockIntroTab('environment')">环境特征</button>
+        </div>
+
+        <div class="unlock-intro-content content-locked" id="unlock-intro-content">
+            <div class="unlock-intro-section active" id="unlock-basic">
+                <h4>基本信息</h4>
+                <div class="scroll-text-box">
+                    <p>（1）大致介绍：双桥由世德桥和永安桥组成，两桥呈直角相连，一横一竖，一方一圆，形似古代的钥匙，故而又名钥匙桥。双桥凝聚了周庄的神韵，桥下一年四季，碧水流淌，桥边则是庭院深深，黛瓦白墙， 无论是晴空万里还是细雨淋淋，桥上桥下都是百看不厌的风景。</p>
+                    <p>（2）基本结构：<1>世德桥:拱形类型：石拱桥，该桥为半圆形拱桥（或称圆形拱桥），拱形呈半月状，桥洞如半弯月亮，倒映在水中形成优雅的弧线。这种拱形属于承压构件，主要依靠石材本身的抗压强度来承受荷载。材料与构造：桥体为石砌结构，主要由石块砌筑而成。古代工匠通过精确的切割和堆砌，使石块紧密咬合，形成稳固的整体。拱圈部分通常使用楔形石砌筑，拱顶有一块特殊的“枢纽石”或“枕枢石”，起到锁住拱圈的作用。力学特性：这种石拱结构的核心在于“拱顶的石头向外推”的原理。由于拱形的特殊几何形状，桥面上的压力会转化为沿拱形轨道传递的推力，最终作用在桥墩上，形成稳定的受力平衡。<br>
+<2>永安桥：辅助结构特征：是一座石梁桥，学名通常称为“永安桥”。虽然它的跨度和规模略小，但与石拱桥形成了鲜明的对比，体现了古代桥梁的两种主要结构形式。结构类型：这是一座平板石梁桥，桥面直接铺设在桥墩之上。</p>
+                </div>
+            </div>
+
+            <div class="unlock-intro-section" id="unlock-history">
+                <h4>历史追溯</h4>
+                <div class="scroll-text-box">
+                    <p>桥名的民俗讲究：“世德” 取 “世代积德、泽被乡里”，“永安” 为 “永保平安、水陆无虞”，是明清江南乡绅造桥时常见的祈福命名；当地曾有习俗，新人成婚要乘摇橹船过双桥，寓意 “圆圆满满、平平安安”。始建与修缮：双桥建于明万历年间（1573–1619），世德桥（石拱桥，东西向跨南北市河）由徐松泉、徐竹溪捐建；永安桥（石梁平桥，南北向架银子浜口）由徐正吾捐建。清乾隆三十年（1765）、道光二十三年（1843）两次重修，1957年再修永安桥。</p>
+                </div>
+            </div>
+
+            <div class="unlock-intro-section" id="unlock-culture">
+                <h4>文化内涵</h4>
+                <div class="scroll-text-box">
+                    <p><1>陈逸飞的油画名作《故乡的回忆》中，永和桥、世德桥这组双桥的倩影淡雅隽永，系住了画家心中的乡愁。靳杨杨烟雨江南姑苏桥 群众大众学堂
+（1984 年，著名画家陈逸飞便以双桥为题，创作了一幅《故乡的回忆》的油画， 后来被美国某公司购下并作为礼物送给前中国领导人邓小平，以双桥象征中、美两国的友好关系。到 1985 年，这幅油画更被印作联合国的首日封，令周庄双桥成为中国与国际间友好交往的象征之门。）
+</p>
+                    <p><2>文化象征：这种结构不仅是古代建筑技术的结晶，也象征着“相依相守”，成为周庄最具辨识度的标志。</p>
+                </div>
+            </div>
+
+            <div class="unlock-intro-section" id="unlock-structure">
+                <h4>苏州周庄双桥的结构与其地势</h4>
+                <div class="scroll-text-box">
+                    <p>1. 一拱一梁、一圆一方：精准适配河道功能与水文
+<br>世德桥（石拱桥，圆拱）
+跨南北市河（主航道），跨度 5.9m，采用六道并列拱券 + 悬链线拱型，适应主河道大流量、高流速、通航净空要求。
+拱型结构自重轻、受力合理、抗洪水冲击能力强，适配软土地基与汛期水流冲击。
+<br>永安桥（石梁桥，方洞）
+跨银子浜（支流），跨度 3.5m，采用简支石梁 + 矩形桥洞，适配支流窄、浅、仅容小船通行的特点。
+梁式构造施工简便、造价低、工期短，适合支流节点快速营造。
+<p>2. 垂直交汇（钥匙形态）：力学稳定与空间效率的最优解
+两桥垂直相交、共基联建，在十字河口形成稳定力三角，大幅提升整体抗倾覆、抗水流冲击能力。
+<br>同济大学 2017 年结构分析显示：该组合使抗剪强度提升 34%，静载能力达同期普通石桥 1.7 倍，完美适配软基与紊流环境。
+<br>空间上：一桥连街、一桥连浜，实现 “水陆双枢纽”，桥头广场成为人流、货流集散节点。
+</p>
+<p>3. 材料与工艺：适配水乡环境的工程智慧
+主体采用武康石、麻条石，耐水、耐腐、抗压强度高，适配江南潮湿、多雨、高水位环境。
+永安桥桥墩采用水纹石叠砌法（28 层石块 45° 交错），增强抗震、抗冲刷、适应地基微沉降能力。
+</p>
+                </div>
+            </div>
+
+            <div class="unlock-intro-section" id="unlock-environment">
+                <h4>环境特征</h4>
+                <div class="scroll-text-box">
+                    <p>1.防洪与排涝:双桥拱 / 梁组合形成高低错落的过水断面，汛期可分流、消能、减缓流速，降低十字口壅水风险。桥身高度适配历史最高水位，保障汛期通行与安全昆山市人民政府。</p>
+<p>2.航运与交通:世德桥拱高满足漕船、货船通航；永安桥低梁适配乌篷船、小舟，分级适配航运需求。桥头石级直接接入街巷，实现 “河街一体、水陆无缝转换”。</p>
+<p>3.生态与景观:桥体顺应河道走向，最小扰动水系，保护水生生态与湿地环境。
+一圆一方、倒影成双，形成 “双桥锁水、影落故乡” 的经典景观，成为江南水乡标识。
+</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="unlock-lock-overlay" id="unlock-lock-overlay">
+            <div class="unlock-lock-overlay-content">
+                <div class="lock-icon">🔒</div>
+                <div class="lock-title">尚未解锁</div>
+                <div class="lock-desc">请先完成网页前置任务并操控无人机靠近桥体，解锁后即可查看更多介绍。</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 左侧：模型介绍窗口 -->
+    <div class="hud-panel" id="model-intro-panel" style="display: none;">
+        <div class="panel-header model-intro-header">
+            <div class="unlock-panel-header-left">
+                <h3>模型介绍</h3>
+                <span class="model-intro-lock-badge" id="model-intro-lock-badge" style="display: none;">已固定</span>
+            </div>
+        </div>
+
+        <div class="model-intro-tabs">
+            <button class="model-tab-btn active" id="tab-shide" type="button" onclick="switchModelIntroTab('shide')">世德桥</button>
+            <button class="model-tab-btn" id="tab-yongan" type="button" onclick="switchModelIntroTab('yongan')">永安桥</button>
+        </div>
+
+        <div class="model-intro-content">
+            <div class="model-intro-section active" id="intro-shide">
+                <h4>世德桥</h4>
+                <p>
+                    拱形类型：石拱桥，该桥为半圆形拱桥（或称圆形拱桥），拱形呈半月状，桥洞如半弯月亮，倒映在水中形成优雅的弧线。这种拱形属于承压构件，主要依靠石材本身的抗压强度来承受荷载。材料与构造：桥体为石砌结构，主要由石块砌筑而成。古代工匠通过精确的切割和堆砌，使石块紧密咬合，形成稳固的整体。拱圈部分通常使用楔形石（voussoirs）砌筑，拱顶有一块特殊的“枢纽石”或“枕枢石”，起到锁住拱圈的作用。力学特性：这种石拱结构的核心在于“拱顶的石头向外推”的原理。由于拱形的特殊几何形状，桥面上的压力会转化为沿拱形轨道传递的推力，最终作用在桥墩上，形成稳定的受力平衡。
+                </p>
+            </div>
+
+            <div class="model-intro-section" id="intro-yongan">
+                <h4>永安桥</h4>
+                <p>
+                    辅助结构特征：是一座石梁桥，学名通常称为“永安桥”。虽然它的跨度和规模略小，但与石拱桥形成了鲜明的对比，体现了古代桥梁的两种主要结构形式。结构类型：这是一座平板石梁桥，桥面直接铺设在桥墩之上。受力方式：与石拱桥不同，石梁桥主要依靠抗弯矩来承载荷载。桥面下方通常有石梁或石板作为支撑，桥墩则承担桥面传来的压力。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 音量控制台 -->
+    <div id="audio-control" class="audio-control">
+        <div class="audio-control-header" onclick="toggleAudioControl()">
+            <span class="audio-control-title">🔊 音量</span>
+            <span class="audio-control-toggle-icon" id="audio-control-toggle-icon">▸</span>
+        </div>
+        <div class="audio-control-body">
+            <div class="audio-control-row">
+                <span class="audio-control-label">无人机</span>
+                <button class="audio-control-mute-btn" id="drone-audio-mute-btn" onclick="toggleDroneMute()" title="静音/取消静音">
+                    <span id="drone-mute-icon">🔊</span>
+                </button>
+                <input type="range" id="drone-volume-slider" class="audio-control-slider" min="0" max="100" value="80" oninput="setDroneVolume(this.value / 100)">
+                <span class="audio-control-value" id="drone-volume-value">80%</span>
+            </div>
+            <div class="audio-control-row">
+                <span class="audio-control-label">背景音乐</span>
+                <button class="audio-control-mute-btn" id="bgm-mute-btn" onclick="toggleBgmMute()" title="静音/取消静音">
+                    <span id="bgm-mute-icon">🔊</span>
+                </button>
+                <input type="range" id="bgm-volume-slider" class="audio-control-slider" min="0" max="100" value="80" oninput="setBgmVolume(this.value / 100)">
+                <span class="audio-control-value" id="bgm-volume-value">80%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 无人机操作指南 -->
+    <div class="hud-panel" id="drone-guide-panel">
+        <div class="panel-header">
+            <h3>无人机已解锁</h3>
+            <button class="panel-close-btn" type="button" onclick="closeDroneGuidePanel()">×</button>
+        </div>
+
+        <div class="drone-guide-content">
+            <p>你已完成网页端前置交互，现在可以操作 Unity 场景中的无人机。</p>
+            <p><b>空格键</b>：起飞</p>
+            <p><b>L 键</b>：降落</p>
+            <p><b>W</b>：向前</p>
+            <p><b>S</b>：向后</p>
+            <p><b>A</b>：左转</p>
+            <p><b>D</b>：右转</p>
+            <p><b>Q</b>：水平左转</p>
+            <p><b>E</b>：水平右转</p>
+            <hr>
+            <p class="drone-next-tip">
+                请操控无人机继续向前，到桥的旁边后可解锁更多交互和介绍。
+            </p>
+            <button class="drone-confirm-btn" type="button" onclick="confirmDroneGuide()">确定</button>
+        </div>
+    </div>
+
+    <!-- 中央箭头提示 -->
+    <div class="arrow-hint-container" id="arrow-hint" style="display: none;">
+        <div class="arrow-icon">↑</div>
+        <div class="arrow-text">往前靠近桥可以解锁更多介绍</div>
+    </div>
+
+    <!-- 机器人朝向提示 -->
+    <div id="robot-direction-hint" class="robot-direction-hint" style="display:none;">
+        <div class="robot-direction-content">
+            <div class="robot-direction-title">提示</div>
+            <div class="robot-direction-text">机器人将面对无人机起始视角摄像头</div>
+            <button class="robot-direction-btn" type="button" onclick="showRobotActionHint()">确定</button>
+        </div>
+    </div>
+
+    <!-- 机器人操作引导提示 -->
+    <div id="robot-action-hint" class="robot-action-hint" style="display:none;">
+        <div class="robot-action-content">
+            <div class="robot-action-title">提示</div>
+            <div class="robot-action-text">点击右下角的"进入机器人语音对话"按钮，机器人会出现</div>
+            <button class="robot-action-btn" type="button" onclick="closeRobotActionHint()">确定</button>
+        </div>
+    </div>
+
+    <!-- 机器人出现位置提示 -->
+    <div id="robot-location-hint" class="robot-location-hint" style="display: none;">
+        <img src="robot3.png" alt="机器人" class="robot-hint-icon">
+        <span class="robot-hint-text">机器人将出现在世德桥上</span>
+    </div>
+
+    <!-- 进入机器人语音对话按钮 -->
+    <button id="robot-entry-btn" class="robot-entry-btn" style="display: none;" onclick="toggleRobotVoiceDialog()">
+        <img src="robot3.png" alt="机器人"> 进入机器人语音对话
+    </button>
+
+    <!-- 机器人介绍视频全屏播放器 -->
+    <div id="robot-video-overlay" class="robot-video-overlay" onclick="closeRobotVideoOnBackdrop(event)">
+        <div class="robot-video-topbar">
+            <span class="robot-video-title">🎬 苏州双桥机器人介绍</span>
+            <button class="robot-video-close-btn" type="button" onclick="closeRobotVideo()">关闭视频</button>
+        </div>
+        <video id="robot-intro-video" class="robot-intro-video" controls preload="auto" playsinline>
+            <source src="video/苏州双桥机器人介绍.mp4" type="video/mp4">
+            您的浏览器不支持 video 标签。
+        </video>
+        <div class="robot-video-bottom-tip">观看完成后自动进入语音对话</div>
+    </div>
+
+    <!-- 语音对话面板 - 视频播放完成后自动显示 -->
+    <div id="voice-dialog-panel" class="hud-panel voice-dialog-panel" style="display: none;">
+        <div class="panel-header">
+            <h3>🎤 机器人语音对话</h3>
+            <button class="panel-close-btn" type="button" onclick="closeVoiceDialog()">×</button>
+        </div>
+        
+        <div class="voice-dialog-status">
+            <span id="voice-status" class="voice-status">未连接</span>
+            <span id="voice-recording-indicator" class="voice-recording-indicator" style="display: none;">
+                <span class="voice-pulse"></span>
+                正在录音...
+            </span>
+        </div>
+        
+        <div id="voice-chat-container" class="voice-chat-container">
+            <div class="voice-message voice-message-system">欢迎与机器人沧朔对话！点击"开始对话"按钮开始语音交流。</div>
+        </div>
+        
+        <div class="voice-dialog-controls">
+            <div class="voice-btn-group">
+                <button id="btn-voice-connect" class="voice-btn voice-btn-primary" onclick="voiceDialogApp?.connect()">
+                    <span>🔌</span> 开始对话
+                </button>
+                <button id="btn-voice-start" class="voice-btn voice-btn-secondary" disabled onclick="voiceDialogApp?.startVoiceChat()">
+                    <span>🎤</span> 语音输入
+                </button>
+                <button id="btn-voice-stop" class="voice-btn voice-btn-danger" disabled onclick="voiceDialogApp?.stop()">
+                    <span>⏹️</span> 停止
+                </button>
+            </div>
+            
+            <div class="voice-text-input-group">
+                <input type="text" id="voice-text-input" class="voice-text-input" placeholder="输入文字消息，按回车发送..." onkeypress="if(event.key==='Enter') voiceDialogApp?.sendText()">
+                <button id="btn-voice-send" class="voice-btn voice-btn-primary" style="flex: 0 0 auto; padding: 10px 20px;" onclick="voiceDialogApp?.sendText()">
+                    发送
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧控制按钮（原任务面板位置） -->
+    <div class="hud-panel" id="bottom-controls">
+        <div class="controls-top-row">
+            <div class="controls-left">
+                <button class="control-btn btn-view-model-text" id="btn-view-model" type="button" onclick="viewModel(event)" title="查看模型及介绍">
+                    查看模型及介绍
+                </button>
+            </div>
+            <div class="controls-right">
+                <div class="season-grid">
+                    <button class="control-btn btn-season-text" id="btn-spring" type="button" onclick="changeSeason('spring', event)" title="春">春</button>
+                    <button class="control-btn btn-season-text" id="btn-summer" type="button" onclick="changeSeason('summer', event)" title="夏">夏</button>
+                    <button class="control-btn btn-season-text" id="btn-autumn" type="button" onclick="changeSeason('autumn', event)" title="秋">秋</button>
+                    <button class="control-btn btn-season-text" id="btn-winter" type="button" onclick="changeSeason('winter', event)" title="冬">冬</button>
+                </div>
+            </div>
+        </div>
+        <div class="controls-bottom-row">
+            <button class="control-btn btn-extra-text" id="btn-open-unlock-intro" type="button" style="display: none;" onclick="reopenUnlockIntro()" title="更多历史介绍">
+                更多历史介绍
+            </button>
+            <button class="control-btn btn-extra-text" id="btn-open-drone-guide" type="button" style="display: none;" onclick="reopenDroneGuide()" title="打开无人机指南">
+                打开无人机指南
+            </button>
+        </div>
+    </div>
+
+    <!-- 历史介绍面板 -->
+    <div class="hud-panel" id="history-panel" style="display: none; right: 20px; top: 80px; width: 320px;">
+        <h3>历史介绍</h3>
+        <p>这里是古桥的历史介绍...</p>
+        <!--
+          ⚠️ 这里原来有一段 <video><source src="history.mp4"></video>，但磁盘上从来没有
+          history.mp4 这个文件（全项目 HTML 资源核对中唯一的一处悬空引用），播放器必然 404、
+          只显示一个黑框。已先摘掉，并加上“缺文件时自动隐藏”的兜底。
+          补上视频后，把下面的 <video> 取消注释、并填好 src 即可自动恢复显示。
+        -->
+        <div id="history-video-wrap" style="display:none; margin-top:10px;">
+            <video id="history-video" controls width="100%">
+                <!-- <source src="history.mp4" type="video/mp4"> -->
+                您的浏览器不支持 video 标签。
+            </video>
+        </div>
+        <p id="history-video-missing" style="color:#c9a227; font-size:13px; line-height:1.6;">
+            历史影片尚未提供。
+        </p>
+        <script>
+            // 缺视频就不显示播放器（存在则自动显示），避免用户看到一个坏掉的黑框
+            (function () {
+                var v = document.getElementById('history-video');
+                var wrap = document.getElementById('history-video-wrap');
+                var miss = document.getElementById('history-video-missing');
+                if (!v || !wrap) return;
+                var src = v.querySelector('source');
+                if (!src || !src.getAttribute('src')) return;   // 未配置视频：保持隐藏
+                v.addEventListener('loadeddata', function () {
+                    wrap.style.display = 'block';
+                    if (miss) miss.style.display = 'none';
+                });
+                v.addEventListener('error', function () {
+                    wrap.style.display = 'none';
+                    if (miss) miss.style.display = 'block';
+                });
+                src.addEventListener('error', function () {
+                    wrap.style.display = 'none';
+                    if (miss) miss.style.display = 'block';
+                });
+                v.load();
+            })();
+        </script>
+        <button class="cmd-btn" type="button" onclick="toggleHistory()" style="margin-top: 10px;">关闭</button>
+    </div>
+
+    <script src="main.js?v=5"></script>
+    <!-- 语音对话模块 - 使用 ES6 模块 -->
+    <script type="module" src="voice-dialog.js?v=3"></script>
+    
+    <!-- Unity WebGL 初始化 -->
+    <script>
+        // unityInstance 已在 main.js 中声明，此处不再重复声明
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            var canvas = document.querySelector("#unity-canvas");
+            var loading = document.getElementById('unity-loading');
+            var progressBar = document.getElementById('unity-progress-bar');
+            
+            function updateProgress(progress) {
+                if (progressBar) progressBar.style.width = (progress * 100) + '%';
+            }
+            
+            function onLoadComplete(instance) {
+                unityInstance = instance;
+                if (loading) loading.style.display = 'none';
+                console.log('[Unity] 加载完成');
+                if (typeof onUnityReady === 'function') onUnityReady(instance);
+            }
+            
+            function showError(msg) {
+                console.error('[Unity]', msg);
+                if (loading) {
+                    loading.innerHTML = '<div class="unity-loading-error">' + msg + '</div>';
+                }
+            }
+            
+            function showPlaceholder() {
+                console.warn('[Unity] Build 文件未找到');
+                if (loading) {
+                    loading.innerHTML = 
+                        '<div class="unity-loading-placeholder">' +
+                        '<div style="font-size:18px;margin-bottom:10px;">🎮 Unity WebGL 未部署</div>' +
+                        '<div style="font-size:14px;">请将 WebGL 构建文件放入 Build 文件夹</div>' +
+                        '<div style="font-size:12px;margin-top:10px;color:#888;">详细说明见 Build/README.md</div>' +
+                        '</div>';
+                }
+                if (typeof onUnityReady === 'function') onUnityReady(null);
+            }
+            
+            // 尝试新版 Unity 2020+
+            var scriptNew = document.createElement('script');
+            scriptNew.src = 'Build/WebGL.loader.js';
+            scriptNew.onload = function() {
+                console.log('[Unity] 检测到新版 Unity');
+                var config = {
+                    dataUrl: "Build/WebGL.data.gz",
+                    frameworkUrl: "Build/WebGL.framework.js.gz", 
+                    codeUrl: "Build/WebGL.wasm.gz",
+                    streamingAssetsUrl: "StreamingAssets",
+                    companyName: "DefaultCompany",
+                    productName: "suzhoushuangqiao",
+                    productVersion: "0.1",
+                    webglContextAttributes: {
+                        preserveDrawingBuffer: true,
+                        powerPreference: 2
+                    }
+                };
+                createUnityInstance(document.getElementById('unity-canvas'), config, updateProgress)
+                    .then(onLoadComplete)
+                    .catch(function(e) { showError('加载失败: ' + e); });
+            };
+            scriptNew.onerror = function() {
+                // 尝试旧版 Unity
+                var scriptOld = document.createElement('script');
+                scriptOld.src = 'Build/UnityLoader.js';
+                scriptOld.onload = function() {
+                    console.log('[Unity] 检测到旧版 Unity');
+                    var config = {
+                        dataUrl: "Build/WebGL.data.unityweb",
+                        frameworkUrl: "Build/WebGL.wasm.framework.unityweb",
+                        codeUrl: "Build/WebGL.wasm.code.unityweb",
+                        streamingAssetsUrl: "StreamingAssets",
+                        companyName: "DefaultCompany",
+                        productName: "suzhoushuangqiao",
+                        productVersion: "0.1"
+                    };
+                    UnityLoader.instantiate("#unity-canvas", config);
+                    // 旧版检测完成
+                    setTimeout(function() {
+                        if (window.unityInstance) onLoadComplete(window.unityInstance);
+                    }, 1000);
+                };
+                scriptOld.onerror = showPlaceholder;
+                document.body.appendChild(scriptOld);
+            };
+            document.body.appendChild(scriptNew);
+        });
+
+        // 窗口大小调整
+        window.addEventListener('resize', function() {
+            if (unityInstance) {
+                unityInstance.SendMessage('WebGLBridge', 'OnBrowserResize', 
+                    window.innerWidth + ',' + window.innerHeight);
+            }
+        });
+    </script>    <!-- 返回首页按钮 -->
+    <button id="back-home-btn" class="back-home-btn" onclick="goBackHome()">返回</button>
+    
+    <script>
+        function goBackHome() {
+            window.history.back();
+        }
+    </script>
+    <!-- 截图按钮 -->
+    <button id="screenshotBtn" title="截图保存到素材库" style="
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: 9999;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 1px solid rgba(43,34,25,0.15);
+        background: linear-gradient(180deg, rgba(255,251,240,0.95), rgba(243,234,216,0.95));
+        color: #2b2b22;
+        font-size: 18px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,0.12)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">📷</button>
+
+    <!-- 截图提示 -->
+    <div id="screenshotToast" style="
+        position: fixed;
+        top: 70px;
+        right: 15px;
+        z-index: 9999;
+        background: rgba(11,107,91,0.92);
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 6px;
+        font-size: 13px;
+        display: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    "></div>
+
+    <script>
+    (function() {
+        // 素材库挂在文创后端（3001），端口与「启动全部场景.bat」里的 PORT_API 一致。
+        // ⚠️ 这里原来指向 127.0.0.1:5000 —— 那个端口上没有任何服务，
+        //    点截图只会走到 catch 里报「保存失败」，按钮看着是好的但链路是断的。
+        var API_BASE = 'http://127.0.0.1:3001';
+        var SCENE_NAME = '苏州双桥';
+
+        document.getElementById('screenshotBtn').addEventListener('click', async function() {
+            var canvas = document.getElementById('unity-canvas');
+            if (!canvas) {
+                showToast('未找到场景画布');
+                return;
+            }
+
+            try {
+                showToast('正在保存截图...');
+                var dataURL = canvas.toDataURL('image/png');
+
+                var response = await fetch(API_BASE + '/api/screenshots/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: dataURL,
+                        scene_name: SCENE_NAME
+                    })
+                });
+
+                var result = await response.json();
+                if (result.success) {
+                    var shot = result.snapshot || {};
+                    var size = shot.width ? ' · ' + shot.width + '×' + shot.height : '';
+                    showToast('✅ 已存入文创素材库' + size);
+                } else {
+                    showToast('保存失败: ' + (result.error || '未知错误'));
+                }
+            } catch (e) {
+                console.error('截图失败:', e);
+                showToast('截图保存失败，请确认文创后端(3001)已启动');
+            }
+        });
+
+        function showToast(msg) {
+            var toast = document.getElementById('screenshotToast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(function() {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+    })();
+    </script>
+</body>
+</html>

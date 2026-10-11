@@ -1,0 +1,121 @@
+{
+  "models": [
+    {
+      "id": "vase_belly",
+      "name": "花瓶·圆肚",
+      "uvType": "cylinder",
+      "targetRatio": 3.0,
+      "seamSensitive": true,
+      "safeZone": { "top": 0.15, "bottom": 0.15 },
+      "patternType": "centered",
+      "forbidden": ["横向人脸", "横向文字"],
+      "decorationNorm": "moderate",
+      "maxColorCount": 4,
+      "patternDensityLimit": 0.4
+    },
+    {
+      "id": "vase_slim",
+      "name": "花瓶·细颈",
+      "uvType": "cylinder",
+      "targetRatio": 2.5,
+      "seamSensitive": true,
+      "safeZone": { "top": 0.25, "bottom": 0.1 },
+      "patternType": "centered",
+      "forbidden": ["满版密集图案", "横向人脸"],
+      "decorationNorm": "minimal",
+      "maxColorCount": 2,
+      "patternDensityLimit": 0.15
+    },
+    {
+      "id": "cup_classic",
+      "name": "茶杯·经典款",
+      "uvType": "cylinder",
+      "targetRatio": 2.0,
+      "seamSensitive": true,
+      "safeZone": { "top": 0.1, "bottom": 0.1 },
+      "patternType": "any",
+      "forbidden": [],
+      "decorationNorm": "rich",
+      "maxColorCount": 12,
+      "patternDensityLimit": 0.8
+    },
+    {
+      "id": "cup_straight",
+      "name": "茶杯·直筒款",
+      "uvType": "cylinder",
+      "targetRatio": 2.0,
+      "seamSensitive": true,
+      "safeZone": { "top": 0.08, "bottom": 0.08 },
+      "patternType": "seamless",
+      "forbidden": [],
+      "decorationNorm": "rich",
+      "maxColorCount": 12,
+      "patternDensityLimit": 0.8
+    },
+    {
+      "id": "penholder_round",
+      "name": "笔筒·圆",
+      "uvType": "cylinder",
+      "targetRatio": 1.8,
+      "seamSensitive": true,
+      "safeZone": { "top": 0.05, "bottom": 0.05 },
+      "patternType": "seamless",
+      "forbidden": [],
+      "decorationNorm": "moderate",
+      "maxColorCount": 5,
+      "patternDensityLimit": 0.5
+    },
+    {
+      "id": "penholder_square",
+      "name": "笔筒·方",
+      "uvType": "faces",
+      "targetRatio": 1.0,
+      "seamSensitive": false,
+      "safeZone": { "top": 0.08, "bottom": 0.08 },
+      "patternType": "centered",
+      "forbidden": [],
+      "decorationNorm": "moderate",
+      "maxColorCount": 5,
+      "patternDensityLimit": 0.5
+    },
+    {
+      "id": "bag_onepiece",
+      "name": "帆布包·一片式",
+      "uvType": "flat",
+      "targetRatio": 1.2,
+      "seamSensitive": false,
+      "safeZone": { "top": 0.1, "bottom": 0.1 },
+      "patternType": "any",
+      "forbidden": [],
+      "decorationNorm": "rich",
+      "maxColorCount": 16,
+      "patternDensityLimit": 0.85
+    },
+    {
+      "id": "bag_tote",
+      "name": "帆布包·托特",
+      "uvType": "faces",
+      "targetRatio": 1.1,
+      "seamSensitive": false,
+      "safeZone": { "top": 0.15, "bottom": 0.05 },
+      "patternType": "centered",
+      "forbidden": [],
+      "decorationNorm": "rich",
+      "maxColorCount": 16,
+      "patternDensityLimit": 0.85
+    },
+    {
+      "id": "fan_tuanshan",
+      "name": "扇子·团扇",
+      "uvType": "radial",
+      "targetRatio": 1.0,
+      "seamSensitive": false,
+      "safeZone": { "top": 0.1, "bottom": 0.1 },
+      "patternType": "radial",
+      "forbidden": ["横向长条构图"],
+      "decorationNorm": "moderate",
+      "maxColorCount": 6,
+      "patternDensityLimit": 0.5
+    }
+  ]
+}

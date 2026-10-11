@@ -1,0 +1,375 @@
+{
+  "generatedAt": "2026-10-06T08:40:30.574Z",
+  "url": "http://localhost:5173/",
+  "outDir": "D:\\2026数媒大赛古桥项目\\网页\\wenchuang-customizer\\docs\\联调截图",
+  "ok": true,
+  "models": [
+    {
+      "id": "mug_a",
+      "label": "茶杯 · 经典款",
+      "steps": [
+        "paint",
+        "export",
+        "finish"
+      ]
+    },
+    {
+      "id": "mug_b",
+      "label": "茶杯 · 直筒款（塑料）",
+      "steps": [
+        "paint",
+        "export"
+      ]
+    },
+    {
+      "id": "holder_b",
+      "label": "笔筒 · 方（方形截面）",
+      "steps": [
+        "paint",
+        "export",
+        "finish"
+      ]
+    },
+    {
+      "id": "holder_a",
+      "label": "笔筒 · 圆",
+      "steps": [
+        "paint",
+        "export",
+        "finish"
+      ]
+    },
+    {
+      "id": "vase_a",
+      "label": "花瓶 · 圆肚",
+      "steps": [
+        "paint",
+        "export",
+        "finish"
+      ]
+    },
+    {
+      "id": "vase_b",
+      "label": "花瓶 · 细颈",
+      "steps": [
+        "paint",
+        "export",
+        "finish"
+      ]
+    },
+    {
+      "id": "bag_a",
+      "label": "帆布包 · 一片式",
+      "steps": [
+        "paint",
+        "export",
+        "finish"
+      ]
+    },
+    {
+      "id": "bag_b",
+      "label": "帆布包 · 托特",
+      "steps": [
+        "paint",
+        "export",
+        "finish"
+      ]
+    },
+    {
+      "id": "fan_b",
+      "label": "扇子 · 团扇（自带烘焙贴图的扫描件）",
+      "steps": [
+        "paint",
+        "export"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "model": "（前置）",
+      "modelLabel": "（前置）",
+      "step": "verify",
+      "label": "模型自检",
+      "ok": true,
+      "pass": 9,
+      "total": 9,
+      "fails": [],
+      "ms": 185
+    },
+    {
+      "model": "mug_a",
+      "modelLabel": "茶杯 · 经典款",
+      "step": "paint",
+      "label": "茶杯 · 经典款 · 按部位贴图",
+      "ok": true,
+      "pass": 17,
+      "total": 17,
+      "fails": [],
+      "ms": 91754
+    },
+    {
+      "model": "mug_a",
+      "modelLabel": "茶杯 · 经典款",
+      "step": "export",
+      "label": "茶杯 · 经典款 · 导出 GLB",
+      "ok": true,
+      "pass": 5,
+      "total": 5,
+      "fails": [],
+      "ms": 83166
+    },
+    {
+      "model": "mug_a",
+      "modelLabel": "茶杯 · 经典款",
+      "step": "finish",
+      "label": "茶杯 · 经典款 · 表面质感",
+      "ok": true,
+      "pass": 8,
+      "total": 8,
+      "fails": [],
+      "ms": 100438
+    },
+    {
+      "model": "mug_b",
+      "modelLabel": "茶杯 · 直筒款（塑料）",
+      "step": "paint",
+      "label": "茶杯 · 直筒款（塑料） · 按部位贴图",
+      "ok": true,
+      "pass": 11,
+      "total": 11,
+      "fails": [],
+      "ms": 92975
+    },
+    {
+      "model": "mug_b",
+      "modelLabel": "茶杯 · 直筒款（塑料）",
+      "step": "export",
+      "label": "茶杯 · 直筒款（塑料） · 导出 GLB",
+      "ok": true,
+      "pass": 5,
+      "total": 5,
+      "fails": [],
+      "ms": 90012
+    },
+    {
+      "model": "holder_b",
+      "modelLabel": "笔筒 · 方（方形截面）",
+      "step": "paint",
+      "label": "笔筒 · 方（方形截面） · 按部位贴图",
+      "ok": true,
+      "pass": 11,
+      "total": 11,
+      "fails": [],
+      "ms": 98867
+    },
+    {
+      "model": "holder_b",
+      "modelLabel": "笔筒 · 方（方形截面）",
+      "step": "export",
+      "label": "笔筒 · 方（方形截面） · 导出 GLB",
+      "ok": true,
+      "pass": 5,
+      "total": 5,
+      "fails": [],
+      "ms": 90010
+    },
+    {
+      "model": "holder_b",
+      "modelLabel": "笔筒 · 方（方形截面）",
+      "step": "finish",
+      "label": "笔筒 · 方（方形截面） · 表面质感",
+      "ok": true,
+      "pass": 8,
+      "total": 8,
+      "fails": [],
+      "ms": 109334
+    },
+    {
+      "model": "holder_a",
+      "modelLabel": "笔筒 · 圆",
+      "step": "paint",
+      "label": "笔筒 · 圆 · 按部位贴图",
+      "ok": true,
+      "pass": 11,
+      "total": 11,
+      "fails": [],
+      "ms": 98653
+    },
+    {
+      "model": "holder_a",
+      "modelLabel": "笔筒 · 圆",
+      "step": "export",
+      "label": "笔筒 · 圆 · 导出 GLB",
+      "ok": true,
+      "pass": 5,
+      "total": 5,
+      "fails": [],
+      "ms": 90038
+    },
+    {
+      "model": "holder_a",
+      "modelLabel": "笔筒 · 圆",
+      "step": "finish",
+      "label": "笔筒 · 圆 · 表面质感",
+      "ok": true,
+      "pass": 8,
+      "total": 8,
+      "fails": [],
+      "ms": 108886
+    },
+    {
+      "model": "vase_a",
+      "modelLabel": "花瓶 · 圆肚",
+      "step": "paint",
+      "label": "花瓶 · 圆肚 · 按部位贴图",
+      "ok": true,
+      "pass": 11,
+      "total": 11,
+      "fails": [],
+      "ms": 97683
+    },
+    {
+      "model": "vase_a",
+      "modelLabel": "花瓶 · 圆肚",
+      "step": "export",
+      "label": "花瓶 · 圆肚 · 导出 GLB",
+      "ok": true,
+      "pass": 5,
+      "total": 5,
+      "fails": [],
+      "ms": 90023
+    },
+    {
+      "model": "vase_a",
+      "modelLabel": "花瓶 · 圆肚",
+      "step": "finish",
+      "label": "花瓶 · 圆肚 · 表面质感",
+      "ok": true,
+      "pass": 8,
+      "total": 8,
+      "fails": [],
+      "ms": 103570
+    },
+    {
+      "model": "vase_b",
+      "modelLabel": "花瓶 · 细颈",
+      "step": "paint",
+      "label": "花瓶 · 细颈 · 按部位贴图",
+      "ok": true,
+      "pass": 11,
+      "total": 11,
+      "fails": [],
+      "ms": 96946
+    },
+    {
+      "model": "vase_b",
+      "modelLabel": "花瓶 · 细颈",
+      "step": "export",
+      "label": "花瓶 · 细颈 · 导出 GLB",
+      "ok": true,
+      "pass": 5,
+      "total": 5,
+      "fails": [],
+      "ms": 90002
+    },
+    {
+      "model": "vase_b",
+      "modelLabel": "花瓶 · 细颈",
+      "step": "finish",
+      "label": "花瓶 · 细颈 · 表面质感",
+      "ok": true,
+      "pass": 8,
+      "total": 8,
+      "fails": [],
+      "ms": 104345
+    },
+    {
+      "model": "bag_a",
+      "modelLabel": "帆布包 · 一片式",
+      "step": "paint",
+      "label": "帆布包 · 一片式 · 按部位贴图",
+      "ok": true,
+      "pass": 16,
+      "total": 16,
+      "fails": [],
+      "ms": 110132
+    },
+    {
+      "model": "bag_a",
+      "modelLabel": "帆布包 · 一片式",
+      "step": "export",
+      "label": "帆布包 · 一片式 · 导出 GLB",
+      "ok": true,
+      "pass": 7,
+      "total": 7,
+      "fails": [],
+      "ms": 98572
+    },
+    {
+      "model": "bag_a",
+      "modelLabel": "帆布包 · 一片式",
+      "step": "finish",
+      "label": "帆布包 · 一片式 · 表面质感",
+      "ok": true,
+      "pass": 8,
+      "total": 8,
+      "fails": [],
+      "ms": 107058
+    },
+    {
+      "model": "bag_b",
+      "modelLabel": "帆布包 · 托特",
+      "step": "paint",
+      "label": "帆布包 · 托特 · 按部位贴图",
+      "ok": true,
+      "pass": 16,
+      "total": 16,
+      "fails": [],
+      "ms": 107205
+    },
+    {
+      "model": "bag_b",
+      "modelLabel": "帆布包 · 托特",
+      "step": "export",
+      "label": "帆布包 · 托特 · 导出 GLB",
+      "ok": true,
+      "pass": 7,
+      "total": 7,
+      "fails": [],
+      "ms": 98560
+    },
+    {
+      "model": "bag_b",
+      "modelLabel": "帆布包 · 托特",
+      "step": "finish",
+      "label": "帆布包 · 托特 · 表面质感",
+      "ok": true,
+      "pass": 8,
+      "total": 8,
+      "fails": [],
+      "ms": 106089
+    },
+    {
+      "model": "fan_b",
+      "modelLabel": "扇子 · 团扇（自带烘焙贴图的扫描件）",
+      "step": "paint",
+      "label": "扇子 · 团扇（自带烘焙贴图的扫描件） · 按部位贴图",
+      "ok": true,
+      "pass": 12,
+      "total": 12,
+      "fails": [],
+      "ms": 96535
+    },
+    {
+      "model": "fan_b",
+      "modelLabel": "扇子 · 团扇（自带烘焙贴图的扫描件）",
+      "step": "export",
+      "label": "扇子 · 团扇（自带烘焙贴图的扫描件） · 导出 GLB",
+      "ok": true,
+      "pass": 8,
+      "total": 8,
+      "fails": [],
+      "ms": 90034
+    }
+  ]
+}

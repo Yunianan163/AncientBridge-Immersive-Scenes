@@ -1,0 +1,2501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>古桥数字场景 · 三维入口</title>
+<meta name="description" content="苏州双桥 / 贵州葛镜桥 / 文创共创体验 —— 三处古桥数字场景的统一入口" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2314110c'/%3E%3Cpath d='M5 22h22' fill='none' stroke='%23c9a86a' stroke-width='2.3' stroke-linecap='round'/%3E%3Cpath d='M9.5 22a6.5 6.5 0 0 1 13 0' fill='none' stroke='%235aa08c' stroke-width='2.3' stroke-linecap='round'/%3E%3C/svg%3E" />
+<style>
+  /* ══════════════════════════════════════════════════════════════════════════
+     古风主题层 · 绢本设色
+     ─────────────────────────────────────────────────────────────────────────
+     取色依据（与文创页 theme.css 的「双桥记」共用同一套公共语汇）：
+
+       苏州 · 周庄双桥（明万历，一石拱一石梁）   江南市河 → 青碧（水色）
+       贵州 · 福泉葛镜桥（明万历，二墩三孔青石） 黔中绝壁 → 赭金（崖壁）
+
+       两桥同为青石砌筑、同属明万历、同见题刻碑记 →
+       主色板定为：绢底 / 松烟墨 / 朱砂（印色）/ 青石 / 水色 / 赭金。
+
+     刻意去掉原来的冷蓝霓虹（青玉冷光 + 深空网格）：
+     三维的做法一个没少 —— 省块挤出、倒角、描边、光柱、脉冲环、
+     岛礁发光点、星点、底面光晕、飞行动画全部保留，
+     只把**色相**从「青玉冷光」搬到「青绿山水 + 描金」。
+     ══════════════════════════════════════════════════════════════════════════ */
+  :root{
+    --bg:#14110c;          /* 松烟墨（暖）—— 取代原来的深空蓝黑 */
+    --fg:#f2e9d8;          /* 绢白 */
+    --fg-dim:#c0b197;      /* 淡墨 */
+    --fg-faint:#8b7c64;    /* 更淡的墨 */
+    --line:rgba(214,192,152,.14);        /* 细金线 */
+    --line-strong:rgba(214,192,152,.30);
+    --gold:#c9a86a;        /* 描金 */
+    --serif:"Source Han Serif SC","Noto Serif SC","Songti SC","STSong","SimSun","宋体",serif;
+    --kai:"Kaiti SC","STKaiti","KaiTi","楷体","DFKai-SB","FangSong",serif;
+    --mono:ui-monospace,Consolas,"Cascadia Mono","Courier New",monospace;
+    --ok:#7ba05b;          /* 苔绿 */
+    --bad:#b8493a;         /* 朱砂（兼作警示） */
+    --wait:#c9a25c;        /* 藤黄 */
+    --suzhou:#5aa08c;      /* 青碧 —— 江南水色 */
+    --gejin:#c9a25c;       /* 赭金 —— 黔中崖壁 */
+    --wenchuang:#b5483a;   /* 朱砂 —— 文创页那枚「双桥记」印色 */
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+
+  body{
+    background:var(--bg);
+    color:var(--fg);
+    font-family:var(--serif);
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+    position:relative;
+  }
+
+  /* ── 背景：绢本底色 + 极淡帘纹，3D 画布叠在上面（透明底） ──
+     原来这里是「青→紫」的霓虹三色径向渐变 + 70px 方格网 —— 科技感的主要来源。
+     现在换成绢底上三团几乎看不出形状的微光（石青 / 赭石 / 朱砂），
+     以及宣纸的纵向帘纹。 */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(72vw 52vw at 16% 6%,  rgba(90,140,120,.11), transparent 66%),
+      radial-gradient(60vw 46vw at 86% 2%,  rgba(176,132,64,.11), transparent 66%),
+      radial-gradient(78vw 60vw at 52% 108%, rgba(150,74,56,.09), transparent 70%),
+      linear-gradient(180deg,#16130e 0%,#191510 54%,#100d09 100%);
+  }
+  /* 帘纹：宣纸/绢本的细纹，取代原来的 70px 方格网 */
+  body::after{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      repeating-linear-gradient(0deg,rgba(236,220,186,.032) 0 1px,transparent 1px 4px),
+      repeating-linear-gradient(90deg,rgba(236,220,186,.020) 0 1px,transparent 1px 7px);
+    mask-image:radial-gradient(130vw 100vh at 50% 30%,#000 20%,transparent 86%);
+    -webkit-mask-image:radial-gradient(130vw 100vh at 50% 30%,#000 20%,transparent 86%);
+  }
+
+  /* ══════════════════════════════════ 3D 画布 ══════════════════════════════════ */
+  #gl{
+    position:fixed;inset:0;z-index:1;
+    display:block;width:100%;height:100%;
+    touch-action:none;
+    cursor:grab;
+  }
+  #gl.grabbing{cursor:grabbing}
+  #gl.pointing{cursor:pointer}
+
+  /* ══════════════════════════════════ 城市标签（跟随 3D 投影） ══════════════════════════════════ */
+  #labels{position:fixed;inset:0;z-index:4;pointer-events:none}
+
+  .pin{
+    position:absolute;left:0;top:0;
+    padding:0;border:0;background:none;font:inherit;color:inherit;
+    pointer-events:auto;cursor:pointer;
+    opacity:0;transition:opacity .5s ease .1s;
+    will-change:transform;
+  }
+  .pin.live{opacity:1}
+  /* 锚点跑出视口就淡出：抵近目标时另一个城市的标签会平顺退场，
+     而不是硬生生挂在屏幕边缘露出半个 */
+  .pin.off{opacity:0}
+
+  .pin-in{
+    display:flex;align-items:center;gap:9px;
+    padding:8px 15px 8px 11px;
+    border:1px solid rgba(214,192,152,.26);
+    border-radius:10px;
+    background:rgba(26,21,15,.82);
+    backdrop-filter:blur(10px) saturate(1.05);
+    -webkit-backdrop-filter:blur(10px) saturate(1.05);
+    box-shadow:0 12px 30px -14px rgba(0,0,0,.92),0 0 0 1px rgba(0,0,0,.30) inset;
+    transform:translate(-50%,-100%);
+    transition:transform .28s cubic-bezier(.2,.8,.3,1),border-color .28s,box-shadow .28s,background .28s;
+    white-space:nowrap;
+  }
+  /* 指向标记点的小尖角 */
+  .pin-in::after{
+    content:"";position:absolute;left:50%;bottom:-6px;
+    width:11px;height:11px;margin-left:-5.5px;
+    background:rgba(26,21,15,.82);
+    border-right:1px solid rgba(214,192,152,.26);
+    border-bottom:1px solid rgba(214,192,152,.26);
+    transform:rotate(45deg);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+  }
+  .pin:hover .pin-in,.pin:focus-visible .pin-in{
+    transform:translate(-50%,-100%) translateY(-4px) scale(1.045);
+    outline:none;
+  }
+
+  /* 状态痣：一枚小结。去掉原来的霓虹光晕，只留一圈淡描边 */
+  .pin-led{
+    width:8px;height:8px;border-radius:50%;flex:0 0 auto;
+    background:var(--wait);
+    box-shadow:0 0 0 2px rgba(201,162,92,.22);
+    transition:background .3s,box-shadow .3s;
+  }
+  .pin[data-city="suzhou"]{--c:var(--suzhou)}
+  .pin[data-city="gejin"]{--c:var(--gejin)}
+  .pin:hover .pin-in{
+    border-color:color-mix(in srgb,var(--c) 62%,transparent);
+    box-shadow:0 16px 36px -14px rgba(0,0,0,.9),
+               0 0 0 1px color-mix(in srgb,var(--c) 30%,transparent) inset;
+    background:rgba(34,28,20,.90);
+  }
+  .pin[data-s="up"]   .pin-led{background:var(--ok);  box-shadow:0 0 0 2px rgba(123,160,91,.30)}
+  .pin[data-s="down"] .pin-led{background:var(--bad); box-shadow:0 0 0 2px rgba(184,73,58,.28)}
+  .pin[data-s="unknown"] .pin-led{background:var(--fg-faint);box-shadow:none}
+
+  .pin-txt{display:flex;flex-direction:column;align-items:flex-start;line-height:1.28}
+  .pin-txt b{
+    font-family:var(--serif);font-size:15.5px;font-weight:600;letter-spacing:.06em;
+    color:var(--fg);
+  }
+  .pin-txt i{
+    font-family:var(--kai);font-style:normal;font-size:11.5px;letter-spacing:.10em;color:var(--fg-faint);
+    transition:color .28s;
+  }
+  .pin:hover .pin-txt i{color:color-mix(in srgb,var(--c) 72%,#f2e9d8)}
+
+  .pin.shake{animation:shake .46s cubic-bezier(.36,.07,.19,.97)}
+  @keyframes shake{
+    10%,90%{transform:translateX(-2px)}
+    20%,80%{transform:translateX(5px)}
+    30%,50%,70%{transform:translateX(-8px)}
+    40%,60%{transform:translateX(8px)}
+  }
+
+  /* ══════════════════════════════════ HUD ══════════════════════════════════ */
+  .hud{position:fixed;z-index:6;pointer-events:none}
+  .hud > *{pointer-events:auto}
+
+  /* 左上：标题 */
+  #hud-top{
+    left:clamp(20px,3.4vw,52px);top:clamp(20px,3.2vh,44px);
+    max-width:min(46vw,420px);
+  }
+  /* 标题区背后铺一层向外渐隐的暗色，避免文字与地图（新疆板块）挤在一起 */
+  #hud-top::before{
+    content:"";position:absolute;inset:-34px -90px -34px -56px;
+    z-index:-1;pointer-events:none;border-radius:30px;
+    background:radial-gradient(118% 96% at 6% 28%,
+      rgba(18,15,11,.95) 0%, rgba(18,15,11,.72) 42%, rgba(18,15,11,.28) 68%, transparent 100%);
+  }
+  #hud-top h1{
+    font-family:var(--serif);font-weight:600;
+    font-size:clamp(24px,3.1vw,38px);line-height:1.16;letter-spacing:.10em;
+    margin:16px 0 10px;
+    /* 题字：绢白 → 描金 → 赭，取代原来的「白→青→金」冷调渐变 */
+    background:linear-gradient(96deg,#f8efda 6%,#d7bd8a 48%,#b07c46 94%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  #hud-top p{
+    color:var(--fg-dim);font-size:13.2px;line-height:1.95;letter-spacing:.02em;max-width:34ch;
+  }
+  #hud-top p kbd{
+    font-family:var(--mono);font-size:11px;
+    background:rgba(214,192,152,.10);border:1px solid var(--line);
+    border-radius:4px;padding:1px 6px;color:#ddcba4;
+  }
+
+  /* （右上角那枚「文创共创体验」门帖 / .wcard / #hud-right 已整体移除。
+     进入文创坊改走地图上那条链路：右侧换卷箭头 .scroll-nav → 商店视图 → 点店面上的匾额 .shop-pin。
+     @keyframes pulse 留着 —— .shop-pin-led 还在用它。） */
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.28}}
+
+  /* 左下：图例 / 操作 */
+  #hud-foot{
+    left:clamp(20px,3.4vw,52px);bottom:clamp(18px,3vh,38px);
+    display:flex;flex-direction:column;gap:11px;align-items:flex-start;
+  }
+  .legend{
+    display:flex;flex-wrap:wrap;gap:6px 15px;
+    font-family:var(--kai);font-size:12px;color:var(--fg-faint);letter-spacing:.09em;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend em{
+    width:9px;height:9px;border-radius:50%;font-style:normal;display:inline-block;
+  }
+  /* 按钮改成「押印」的方牌：细金线 + 宋体，去掉原来的胶囊形 */
+  .hud-btn{
+    font:inherit;font-family:var(--serif);font-size:12.5px;letter-spacing:.10em;
+    color:var(--fg-dim);cursor:pointer;
+    background:rgba(214,192,152,.06);border:1px solid var(--line);
+    padding:7px 16px;border-radius:6px;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    transition:background .2s,color .2s,border-color .2s,transform .2s;
+  }
+  .hud-btn:hover{
+    background:rgba(214,192,152,.13);border-color:var(--line-strong);
+    color:var(--fg);transform:translateY(-1px);
+  }
+  .hud-btn:active{transform:translateY(0)}
+
+  /* ══════════════════════════════════ 飞行暗角 ══════════════════════════════════ */
+  /* z-index 3：盖住 canvas(1)，但让城市标签(4) 和 HUD(6) 保持清晰 */
+  #rush{
+    position:fixed;inset:0;z-index:3;pointer-events:none;
+    opacity:0;transition:opacity .8s ease;
+    background:radial-gradient(circle at 50% 50%,
+      transparent 28%, rgba(18,14,10,.42) 74%, rgba(18,14,10,.78) 100%);
+  }
+  #rush.on{opacity:1}
+
+  /* ══════════════════════════════════ 进入遮罩 ══════════════════════════════════ */
+  /* 抵近后立刻进入 —— 淡入压到 .24s、涟漪 .42s：跳转发生在 150ms，
+     剩下的暗场由新页面加载期间补完，观感是连贯的一口气推进去，而不是"停一下再看黑"。 */
+  #veil{
+    position:fixed;inset:0;z-index:20;pointer-events:none;
+    opacity:0;transition:opacity .24s ease;
+    background:radial-gradient(circle at 50% 52%,rgba(236,220,186,0) 0%,rgba(24,19,14,.55) 46%,#0d0a07 78%);
+  }
+  #veil.on{opacity:1}
+  #veil::after{
+    content:"";position:absolute;left:50%;top:52%;
+    width:22vmax;height:22vmax;margin:-11vmax 0 0 -11vmax;
+    border-radius:50%;
+    border:1px solid rgba(214,196,158,.5);
+    opacity:0;transform:scale(.25);
+  }
+  #veil.on::after{animation:ripple .42s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes ripple{
+    0%{opacity:0;transform:scale(.2)}
+    22%{opacity:.9}
+    100%{opacity:0;transform:scale(2.1)}
+  }
+
+  /* ══════════════════════════════════ 提示条 ══════════════════════════════════ */
+  #toast{
+    position:fixed;left:50%;bottom:38px;transform:translate(-50%,26px);
+    max-width:min(88vw,600px);
+    padding:13px 20px;border-radius:8px;
+    background:rgba(30,24,18,.95);border:1px solid var(--line-strong);
+    box-shadow:0 18px 42px -16px rgba(0,0,0,.85);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    font-size:13.2px;line-height:1.75;color:var(--fg);
+    opacity:0;pointer-events:none;transition:opacity .28s,transform .28s;z-index:30;
+  }
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+  #toast b{color:var(--wait)}
+  #toast code{
+    font-family:var(--mono);font-size:11.5px;
+    background:rgba(214,192,152,.12);border-radius:4px;padding:2px 6px;color:#ddcba4;
+  }
+
+  /* ══════════════════════════════════ 载入中 ══════════════════════════════════ */
+  #boot{
+    position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:18px;
+    background:#14110c;transition:opacity .6s ease;
+  }
+  #boot.gone{opacity:0;pointer-events:none}
+  .boot-ring{
+    width:42px;height:42px;border-radius:50%;
+    border:2px solid rgba(214,192,152,.12);
+    border-top-color:var(--suzhou);
+    border-right-color:var(--gejin);
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #boot p{font-family:var(--kai);font-size:13px;color:var(--fg-faint);letter-spacing:.24em}
+
+  /* ══════════════════════════════════ 降级层（WebGL / 数据不可用） ══════════════════════════════════ */
+  #fallback{
+    position:fixed;inset:0;z-index:50;overflow:auto;
+    background:linear-gradient(180deg,#17130f,#1d1813);
+    padding:clamp(28px,6vh,72px) clamp(20px,5vw,60px);
+    display:flex;align-items:center;justify-content:center;
+  }
+  #fallback[hidden]{display:none}
+  .fb-box{max-width:560px;width:100%}
+  .fb-box h2{
+    font-family:var(--serif);font-size:26px;font-weight:600;letter-spacing:.03em;
+    margin:16px 0 12px;
+  }
+  .fb-box > p{color:var(--fg-dim);font-size:13.5px;line-height:1.85;margin-bottom:26px}
+  .fb-list{display:flex;flex-direction:column;gap:12px;list-style:none}
+  .fb-list a{
+    display:flex;align-items:center;gap:13px;
+    padding:16px 18px;border-radius:10px;
+    border:1px solid var(--line);
+    background:linear-gradient(150deg,rgba(214,192,152,.075),rgba(214,192,152,.02));
+    text-decoration:none;color:inherit;
+    transition:transform .26s,border-color .26s;
+  }
+  .fb-list a:hover{transform:translateY(-3px);border-color:var(--line-strong)}
+  .fb-list b{font-family:var(--serif);font-size:16px;font-weight:600;letter-spacing:.06em}
+  .fb-list i{font-family:var(--kai);font-style:normal;font-size:12px;color:var(--fg-faint);display:block;margin-top:3px;letter-spacing:.08em}
+  .fb-led{width:9px;height:9px;border-radius:50%;background:var(--fg-faint);flex:0 0 auto}
+  .fb-led[data-s="up"]{background:var(--ok);box-shadow:0 0 0 2px rgba(123,160,91,.30)}
+  .fb-led[data-s="down"]{background:var(--bad);box-shadow:0 0 0 2px rgba(184,73,58,.28)}
+  .fb-list .fb-go{margin-left:auto;font-size:12px;color:var(--fg-faint)}
+
+  /* ══════════════════════════════ 换卷箭头（地图 ↔ 文创坊） ══════════════════════════════ */
+  /* 挂在地图右侧的一枚「牙签」：竖排题字 + 指向箭头。
+     与 .pin / .wcard 同一套语言（墨底 / 金线 / 宋体），只是改成竖排 —— 像卷册边缘夹的书签。 */
+  .scroll-nav{
+    position:fixed;right:clamp(16px,3.2vw,52px);top:50%;
+    z-index:6;padding:0;border:0;background:none;font:inherit;color:inherit;
+    cursor:pointer;opacity:0;pointer-events:none;
+    transform:translateY(-50%);
+    transition:opacity .55s ease .25s;
+  }
+  .scroll-nav.on{opacity:1;pointer-events:auto}
+  .scroll-nav-in{
+    --c:var(--wenchuang);
+    display:flex;flex-direction:column;align-items:center;gap:11px;
+    padding:15px 10px;border-radius:10px;
+    border:1px solid rgba(214,192,152,.26);
+    background:rgba(26,21,15,.82);
+    backdrop-filter:blur(10px) saturate(1.05);
+    -webkit-backdrop-filter:blur(10px) saturate(1.05);
+    box-shadow:0 12px 30px -14px rgba(0,0,0,.92);
+    transition:transform .3s cubic-bezier(.2,.8,.3,1),border-color .3s,box-shadow .3s,background .3s;
+  }
+  .scroll-nav:hover .scroll-nav-in{
+    border-color:color-mix(in srgb,var(--c) 58%,transparent);
+    background:rgba(34,26,20,.90);
+    box-shadow:0 16px 36px -14px rgba(0,0,0,.9);
+  }
+  .scroll-nav-txt{
+    writing-mode:vertical-rl;text-orientation:upright;
+    font-family:var(--serif);font-size:13px;font-weight:600;
+    letter-spacing:.26em;text-indent:.26em;color:var(--fg);
+  }
+  .scroll-nav-arrow{
+    display:flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:50%;
+    border:1px solid color-mix(in srgb,var(--c) 46%,transparent);
+    background:color-mix(in srgb,var(--c) 14%,transparent);
+    transition:transform .34s cubic-bezier(.2,.8,.3,1);
+  }
+  .scroll-nav-arrow svg{
+    width:13px;height:13px;fill:none;stroke:var(--c);
+    stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+    transition:transform .34s cubic-bezier(.2,.8,.3,1);
+  }
+  .scroll-nav:hover .scroll-nav-arrow{transform:translateX(3px)}
+  /* 切到商店视图后箭头反向（JS 改 data-dir 与题字） */
+  .scroll-nav[data-dir="left"]:hover .scroll-nav-arrow{transform:translateX(-3px)}
+  .scroll-nav[data-dir="left"] .scroll-nav-arrow svg{transform:rotate(180deg)}
+  /* 轻微呼吸，提示"这一侧还能走" */
+  .scroll-nav.on{animation:navNudge 3.6s ease-in-out infinite}
+  @keyframes navNudge{
+    0%,74%,100%{transform:translateY(-50%) translateX(0)}
+    80%{transform:translateY(-50%) translateX(5px)}
+    87%{transform:translateY(-50%) translateX(0)}
+    93%{transform:translateY(-50%) translateX(3px)}
+  }
+
+  /* ══════════════════════════════ 商店题匾（跟随 3D 投影） ══════════════════════════════ */
+  /* 比 .pin 大一号：.pin 是"地图上的一个标记"，题匾是"这一卷的主角"。
+     朱漆底 + 金线 + 宋体大字，是商店的匾额在屏幕上的分身。 */
+  #labels .shop-pin{
+    position:absolute;left:0;top:0;
+    padding:0;border:0;background:none;font:inherit;color:inherit;
+    pointer-events:auto;cursor:pointer;
+    opacity:0;transition:opacity .55s ease .12s;
+    will-change:transform;
+  }
+  #labels .shop-pin.live{opacity:1}
+  #labels .shop-pin.off{opacity:0;pointer-events:none}
+  .shop-pin-in{
+    --c:var(--wenchuang);
+    position:relative;
+    display:flex;align-items:center;gap:11px;
+    padding:10px 18px 10px 14px;
+    border:1px solid rgba(214,192,152,.42);
+    border-radius:8px;
+    background:linear-gradient(180deg,rgba(52,24,18,.95),rgba(28,15,11,.95));
+    backdrop-filter:blur(10px) saturate(1.05);
+    -webkit-backdrop-filter:blur(10px) saturate(1.05);
+    box-shadow:0 18px 44px -18px rgba(0,0,0,.96),
+               0 0 0 1px rgba(214,192,152,.16) inset;
+    transform:translate(-50%,-100%);
+    transition:transform .3s cubic-bezier(.2,.8,.3,1),border-color .3s,box-shadow .3s;
+    white-space:nowrap;
+  }
+  /* 指向商店的小尖角 */
+  .shop-pin-in::after{
+    content:"";position:absolute;left:50%;bottom:-6px;
+    width:11px;height:11px;margin-left:-5.5px;
+    background:rgba(30,16,12,.95);
+    border-right:1px solid rgba(214,192,152,.42);
+    border-bottom:1px solid rgba(214,192,152,.42);
+    transform:rotate(45deg);
+  }
+  .shop-pin:hover .shop-pin-in,
+  .shop-pin:focus-visible .shop-pin-in{
+    transform:translate(-50%,-100%) translateY(-4px) scale(1.03);
+    border-color:color-mix(in srgb,var(--c) 62%,transparent);
+    outline:none;
+  }
+  .shop-pin-txt{display:flex;flex-direction:column;align-items:flex-start;line-height:1.3}
+  .shop-pin-txt b{
+    font-family:var(--serif);font-size:17.5px;font-weight:600;
+    letter-spacing:.14em;color:#f7ecd8;
+  }
+  .shop-pin-txt i{
+    font-family:var(--kai);font-style:normal;font-size:11.5px;
+    letter-spacing:.12em;color:#c09a86;
+  }
+  .shop-pin-led{
+    width:8px;height:8px;border-radius:50%;flex:0 0 auto;
+    background:var(--wait);box-shadow:0 0 0 2px rgba(201,162,92,.22);
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  .shop-pin-led[data-s="up"]{background:var(--ok);box-shadow:0 0 0 2px rgba(123,160,91,.30);animation:none}
+  .shop-pin-led[data-s="down"]{background:var(--bad);box-shadow:0 0 0 2px rgba(184,73,58,.28);animation:none}
+  .shop-pin-led[data-s="unknown"]{background:var(--fg-faint);box-shadow:none;animation:none}
+
+  /* ══════════════════════════════ 视图切换（地图 / 文创坊） ══════════════════════════════ */
+  /* 用 body 上的 data-view 驱动，纯 CSS 显隐 —— 不与 JS 每帧写 class 的 .pin 打架，
+     靠选择器权重取胜（0,2,1 > .pin.live 的 0,2,0）。 */
+  body[data-view="shop"] #labels .pin{opacity:0;pointer-events:none}
+  body[data-view="shop"] .legend{opacity:0;transition:opacity .4s}
+  body[data-view="map"] #labels .shop-pin{opacity:0;pointer-events:none}
+  body[data-view="shop"] .for-map{display:none}
+  body[data-view="map"] .for-shop{display:none}
+  /* 标题文案是 display 切换的，过渡不了 —— 给"新出现的那一组"补一段淡入，
+     否则切场时 3D 在动、字却是一下子跳变的，很跳戏 */
+  body[data-view="shop"] #hud-top .for-shop,
+  body[data-view="map"]  #hud-top .for-map{animation:hudIn .55s cubic-bezier(.2,.8,.3,1) both}
+  @keyframes hudIn{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+
+  /* ── 小屏适配 ── */
+  @media (max-width:900px){
+    #hud-top{max-width:min(70vw,340px)}
+    #hud-top p{display:none}
+    #hud-foot{bottom:auto;top:clamp(96px,16vh,140px)}
+    .legend{display:none}
+    .scroll-nav{right:clamp(8px,2.4vw,18px)}
+    .scroll-nav-txt{font-size:12px;letter-spacing:.18em;text-indent:.18em}
+    .shop-pin-txt i{display:none}
+  }
+  @media (max-width:560px){
+    .pin-txt i{display:none}
+  }
+</style>
+</head>
+<body data-view="map">
+
+<canvas id="gl"></canvas>
+
+<!-- 城市标签 + 商店题匾（每帧按 3D 投影定位） -->
+<div id="labels">
+  <button class="pin" data-city="suzhou" data-s="wait" type="button">
+    <span class="pin-in">
+      <span class="pin-led"></span>
+      <span class="pin-txt"><b>苏州双桥</b><i>江苏 · 苏州</i></span>
+    </span>
+  </button>
+  <button class="pin" data-city="gejin" data-s="wait" type="button">
+    <span class="pin-in">
+      <span class="pin-led"></span>
+      <span class="pin-txt"><b>贵州葛镜桥</b><i>贵州 · 福泉</i></span>
+    </span>
+  </button>
+  <!-- 商店头顶的题匾。与城市标记并列同一套跟随逻辑，只是入/退场由 data-view 控制。
+       点它就是「推近并进入文创共创体验」。 -->
+  <button class="shop-pin" id="shop-pin" data-s="wait" type="button">
+    <span class="shop-pin-in">
+      <span class="shop-pin-led" id="shop-pin-led"></span>
+      <span class="shop-pin-txt"><b>文创共创体验</b><i>AI 生图 · 3D 商品定制</i></span>
+    </span>
+  </button>
+</div>
+
+<!-- ─────────── HUD：标题 ─────────── -->
+<header class="hud" id="hud-top">
+  <h1><span class="for-map">古桥数字场景</span><span class="for-shop">文创坊</span></h1>
+  <p class="for-map">拖动旋转地图，滚轮缩放，点击<b>城市标记</b>可飞入对应场景。
+     全部场景需先运行 <kbd>启动全部场景.bat</kbd>。</p>
+  <p class="for-shop">「双桥记」文创坊 —— 地图东侧的这间铺子，是把两座桥的纹样做成器物的地方。
+     点店面上的<b>匾额</b>，或直接点上方那块<b>文创共创体验</b>，镜头会推近并进入定制页。</p>
+</header>
+
+<!-- ─────────── HUD：换卷箭头（地图 ↔ 文创坊） ─────────── -->
+<button class="scroll-nav" id="nav-view" data-dir="right" type="button" aria-label="切换到文创坊">
+  <span class="scroll-nav-in">
+    <span class="scroll-nav-txt" id="nav-txt">文创坊</span>
+    <span class="scroll-nav-arrow" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+    </span>
+  </span>
+</button>
+
+<!-- ─────────── HUD：底部 ─────────── -->
+<footer class="hud" id="hud-foot">
+  <div class="legend">
+    <span><em style="background:#5aa08c"></em>江苏 · 苏州双桥</span>
+    <span><em style="background:#c9a25c"></em>贵州 · 葛镜桥</span>
+  </div>
+  <button class="hud-btn" id="btn-reset" type="button">复位视角</button>
+</footer>
+
+<div id="rush"></div>
+<div id="veil"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- ─────────── 载入层 ─────────── -->
+<div id="boot">
+  <div class="boot-ring"></div>
+  <p>正在生成三维地图…</p>
+</div>
+
+<!-- ─────────── 降级层 ─────────── -->
+<div id="fallback" hidden>
+  <div class="fb-box">
+    <h2>古桥数字场景 · 选择入口</h2>
+    <p id="fb-reason">当前环境未启用三维渲染，已切换为列表入口。三个场景各自运行在本地端口上，可以同时开启、互不干扰。</p>
+    <ul class="fb-list">
+      <li><a href="http://127.0.0.1:8082/" target="_blank" rel="noopener">
+        <span class="fb-led" data-port="8082"></span>
+        <span><b>苏州双桥</b><i>江南水乡 · Unity WebGL 漫游</i></span>
+        <span class="fb-go">进入 →</span></a></li>
+      <li><a href="http://localhost:8123/" target="_blank" rel="noopener">
+        <span class="fb-led" data-port="8123"></span>
+        <span><b>贵州葛镜桥</b><i>明万历三孔石拱桥 · 3DGS 实景重建</i></span>
+        <span class="fb-go">进入 →</span></a></li>
+      <li><a href="http://localhost:5173/" target="_blank" rel="noopener">
+        <span class="fb-led" data-port="5173"></span>
+        <span><b>文创共创体验</b><i>AI 生图 · 三维商品定制</i></span>
+        <span class="fb-go">进入 →</span></a></li>
+    </ul>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.min.js",
+    "three/addons/": "./vendor/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ══════════════════════════════════════════════════════════════════════
+   配置
+   ══════════════════════════════════════════════════════════════════════ */
+
+const DATA_URL = './data/china-map.json';
+
+/** 两座城市。经纬度用与地图数据完全相同的投影换算，保证标记不偏。 */
+const CITIES = {
+  suzhou: {
+    key: 'suzhou',
+    label: '苏州双桥',
+    sub: '江苏 · 苏州',
+    lon: 120.585, lat: 31.299,
+    url: 'http://127.0.0.1:8082/',
+    port: 8082,
+    hex: 0x5aa08c,       // 青碧 —— 江南水色
+    css: '#5aa08c',
+    rgb: '90,160,140',   // 与 hex 对应，供 canvas 渐变使用
+    capHex: 0x21473e,    // 省块顶面色（石绿的暗调）
+    sideHex: 0x122a26,   // 省块侧面色
+    flyDist: 0.27,       // 飞抵后相机与焦点的距离（接近方向跟随当前视角，见 flyToCity）
+  },
+  gejin: {
+    key: 'gejin',
+    label: '贵州葛镜桥',
+    sub: '贵州 · 福泉',
+    lon: 107.517, lat: 26.703,
+    url: 'http://localhost:8123/',
+    port: 8123,
+    hex: 0xc9a25c,       // 赭金 —— 黔中崖壁
+    css: '#c9a25c',
+    rgb: '201,162,92',
+    capHex: 0x4a3a20,    // 赭石暗调
+    sideHex: 0x2a2216,
+    flyDist: 0.27,       // 飞抵后相机与焦点的距离（接近方向跟随当前视角，见 flyToCity）
+  },
+};
+
+const WENCHUANG_URL = 'http://localhost:5173/';
+const WENCHUANG_PORT = 5173;
+
+/** 文创坊：地图东侧那间铺子。
+ *  它作为「第三个可飞入的节点」复用城市那一整套链路（飞行 / 拾取 / 服务探测 / 题匾跟随），
+ *  唯一不同的是它不在地图经纬度上 —— 不走 toWorld，而是钉在世界坐标的一个固定点。
+ *  店身正脸朝 +Z（和默认机位同侧），所以从 +Z 看过去一定看得见匾额，不会对着后墙。 */
+const SHOP = {
+  key: 'wenchuang',
+  label: '文创共创体验',
+  sub: 'AI 生图 · 3D 商品定制',
+  url: WENCHUANG_URL,
+  port: WENCHUANG_PORT,
+  hex: 0xb5483a,       // 朱砂 —— 与文创页那枚「双桥记」印同色
+  css: '#b5483a',
+  rgb: '181,72,58',
+  x: 1.46,             // 世界 X。地图半宽 0.432、默认视野半宽 ≈1.10 → 这里完全在地图视野之外
+  z: 0,
+  topY: 0.29,          // 题匾锚点高度（模型总高 ≈0.266 = 屋面顶 0.249 + 宝顶）
+  viewDist: 1.02,      // 「切到商店」时相机与店身的距离（店身约占屏高 1/3）
+  flyDist: 0.70,       // 「推近进入」时的距离（约占屏高 1/2，匾额读得清）
+  azim: 0,             // ★ 固定方位角 0 = 从 +Z 侧看，锁死正脸
+  phi: 1.10,           // 俯角 ≈26°。★ 别再往 0.94 压：俯角一大，屋顶就会把檐下的匾额盖住
+};
+
+/** 省级 adcode → 是否重点高亮 */
+const HOT = { 320000: 'suzhou', 520000: 'gejin' };
+
+const MAP_THICK = 0.026;      // 省块基础厚度（厚一点才有"石板"的分量感）
+const MAP_LIFT   = 0.014;     // 高亮省额外抬高
+const SMALL_DIAG = 0.0040;    // 小于此对角线的小岛不做挤出，改用发光点
+/* 倒角：让板块边缘吃到高光，像玉牌而不是生切的铁片。
+   ⚠️ 加了倒角后几何体的顶面在 depth + BEVEL 处，描边和城市标记的高度都要跟着走 */
+const BEVEL = 0.0022;
+const TOP_Y = MAP_THICK + BEVEL;    // 省块顶面相对块底的高度
+
+/* ══════════════════════════════════════════════════════════════════════
+   投影：Albers 等积圆锥（与预处理脚本参数必须完全一致）
+   ══════════════════════════════════════════════════════════════════════ */
+
+function makeAlbers(lon0, lat1, lat2, lat0) {
+  const R = Math.PI / 180;
+  const r_lon0 = lon0 * R, r_lat1 = lat1 * R, r_lat2 = lat2 * R, r_lat0 = lat0 * R;
+  const n = (Math.sin(r_lat1) + Math.sin(r_lat2)) / 2;
+  const C = Math.cos(r_lat1) ** 2 + 2 * n * Math.sin(r_lat1);
+  const rho0 = Math.sqrt(C - 2 * n * Math.sin(r_lat0)) / n;
+  return function (lon, lat) {
+    const rl = lat * R;
+    const rho = Math.sqrt(Math.max(C - 2 * n * Math.sin(rl), 0)) / n;
+    const th = n * (lon * R - r_lon0);
+    return [rho * Math.sin(th), rho0 - rho * Math.cos(th)];
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DOM 引用
+   ══════════════════════════════════════════════════════════════════════ */
+
+const canvas = document.getElementById('gl');
+const labelsBox = document.getElementById('labels');
+const bootBox = document.getElementById('boot');
+const bootText = bootBox.querySelector('p');
+const veil = document.getElementById('veil');
+const rush = document.getElementById('rush');
+const toastEl = document.getElementById('toast');
+const fbBox = document.getElementById('fallback');
+const fbReason = document.getElementById('fb-reason');
+const pinEls = {};
+document.querySelectorAll('.pin').forEach(p => { pinEls[p.dataset.city] = p; });
+const navBtn = document.getElementById('nav-view');
+const navTxt = document.getElementById('nav-txt');
+const shopPinEl = document.getElementById('shop-pin');
+const shopPinLed = document.getElementById('shop-pin-led');
+
+/* ══════════════════════════════════════════════════════════════════════
+   小工具
+   ══════════════════════════════════════════════════════════════════════ */
+
+let toastTimer = null;
+function toast(html) {
+  toastEl.innerHTML = html;
+  toastEl.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('on'), 4600);
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function bail(reason) {
+  fbReason.textContent = reason;
+  fbBox.hidden = false;
+  bootBox.classList.add('gone');
+  initFallbackProbe();
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   降级层的服务探测（与地图层共用同一套逻辑）
+   ══════════════════════════════════════════════════════════════════════ */
+
+const PROBE_TIMEOUT = 2600;
+
+function probe(url) {
+  const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = setTimeout(() => { if (ctl) ctl.abort(); }, PROBE_TIMEOUT);
+  const opts = { mode: 'no-cors', cache: 'no-store', redirect: 'follow' };
+  if (ctl) opts.signal = ctl.signal;
+  return fetch(url, opts).then(() => true, () => false)
+    .then(v => { clearTimeout(timer); return v; });
+}
+
+function initFallbackProbe() {
+  const leds = [...document.querySelectorAll('.fb-led')];
+  const run = () => leds.forEach(led => {
+    const port = led.dataset.port;
+    const url = port === '8082' ? 'http://127.0.0.1:8082/' : `http://localhost:${port}/`;
+    probe(url).then(ok => { led.dataset.s = ok ? 'up' : 'down'; });
+  });
+  run();
+  setInterval(run, 5000);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   WebGL 能力检查
+   ══════════════════════════════════════════════════════════════════════ */
+
+function webglOK() {
+  try {
+    const c = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext &&
+      (c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl')));
+  } catch (e) { return false; }
+}
+
+if (!webglOK()) {
+  bail('当前浏览器未启用 WebGL，三维地图无法渲染，已切换为列表入口。');
+} else {
+  /* ★ 为什么套 try/catch：
+     webglOK() 只能探到「能力」，探不到「能不能真的建出上下文」。显卡驱动异常、
+     上下文数量耗尽、或显存不足时，new THREE.WebGLRenderer 会直接抛错 —— 而它不在
+     任何 try 里，异常一冒泡，#boot 遮罩就永不退场、#fallback 也不出现，
+     用户看到的就是**整页白屏**且没有任何提示（只有 fetch 那条链有 catch）。
+     现在兜住它，转成与「不支持 WebGL」同一条明确的降级路径。 */
+  try {
+    main();
+  } catch (err) {
+    console.error('[boot] 初始化失败：', err);
+    bail('三维场景初始化失败：' + ((err && err.message) ? err.message : String(err)) +
+         '（可尝试刷新页面，或改用下方列表入口）');
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   主流程
+   ══════════════════════════════════════════════════════════════════════ */
+
+function main() {
+
+  /* ---------------------------------------------------- 渲染器 / 场景 */
+
+  const renderer = new THREE.WebGLRenderer({
+    canvas, antialias: true, alpha: true,
+    powerPreference: 'high-performance',
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  const scene = new THREE.Scene();
+
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 100);
+  camera.position.set(0, 1.52, 1.42);
+
+  const controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.055;
+  controls.enablePan = false;
+  controls.rotateSpeed = 0.62;
+  controls.zoomSpeed = 0.72;
+  /* ★ minDistance 必须小于城市 flyDist（0.27），否则抵近会被每帧
+     controls.update() 顶回来 —— 飞得再近也停不住。
+     实测把这个值设成 0.55 时，flyDist 改到多少都无效，终点恒为 0.55。 */
+  controls.minDistance = 0.22;
+  controls.maxDistance = 3.4;
+  controls.minPolarAngle = 0.10;
+  controls.maxPolarAngle = 1.22;      // 不允许转到地图背面以下
+  controls.target.set(0, 0, 0);       // 稍后会被 HOME.tgt 覆盖，这里也必须是地图中心
+  /* 自动旋转交给下面自定义的 spin()（相机与目标点整体刚性旋转），
+     不用 controls.autoRotate —— 见 spin() 里的说明 */
+  controls.autoRotate = false;
+
+  /* ---------------------------------------------------- 光照 */
+
+  /* 光照：原来是一盏冷青环境光（0x9dc2cd）+ 青色轮廓光（0x54c8bc）——
+     那是画面偏"科技"的另一半来源。现在换成
+     「绢底暖环境光 + 暖白主光 + 青碧轮廓光 + 赭金补光」：
+     立体感、轮廓光、石块的体积一个都不少，只是不再有冷蓝。 */
+
+  scene.add(new THREE.AmbientLight(0xd8c8ad, 1.02));
+
+  const keyLight = new THREE.DirectionalLight(0xfff2da, 1.42);
+  keyLight.position.set(0.7, 1.5, 1.0);
+  scene.add(keyLight);
+
+  const rimLight = new THREE.DirectionalLight(0x7fa88f, 0.52);
+  rimLight.position.set(-1.1, 0.7, -0.8);
+  scene.add(rimLight);
+
+  const goldLight = new THREE.DirectionalLight(0xd0a860, 0.42);
+  goldLight.position.set(0.4, 0.35, -1.2);
+  scene.add(goldLight);
+
+  /* ---------------------------------------------------- 材质 */
+
+  /* 每个省用一份自己的材质：色相/明度沿**青绿区间**（石绿→石青）做微小抖动，
+     34 块拼在一起才有"不同成色的青绿山水石"的层次，否则整块地图是一坨纯色。
+     原来的区间是 hue 0.500（青玉冷光）、metalness 0.26 —— 偏冷、偏金属，
+     现在搬到 hue 0.44 附近并把金属度压到 0.15，让省份更像青绿山水的石面。 */
+  const landMatCache = new Map();
+  function landMaterials(adcode) {
+    let m = landMatCache.get(adcode);
+    if (m) return m;
+    /* 用 adcode 派生一个稳定的小数（字符串 hash，避免大整数乘法溢出） */
+    const s = String(adcode);
+    let hh = 0;
+    for (let i = 0; i < s.length; i++) hh = (hh * 31 + s.charCodeAt(i)) % 997;
+    const h = hh / 997;
+    const hue = 0.452 + (h - 0.5) * 0.075;   // 石绿(≈0.42) ↔ 石青(≈0.49)
+    const sat = 0.285 + (h - 0.5) * 0.100;
+    const lit = 0.214 + (h - 0.5) * 0.052;
+    const cap = new THREE.MeshStandardMaterial({
+      color: new THREE.Color().setHSL(hue, sat, lit, THREE.SRGBColorSpace),
+      roughness: 0.80, metalness: 0.14,
+    });
+    const side = new THREE.MeshStandardMaterial({
+      color: new THREE.Color().setHSL(hue, sat * 1.12, lit * 0.46, THREE.SRGBColorSpace),
+      roughness: 0.90, metalness: 0.16,
+    });
+    m = [cap, side];
+    landMatCache.set(adcode, m);
+    return m;
+  }
+
+  const hotMat = {};   // key -> { cap, side }
+  for (const k of Object.keys(CITIES)) {
+    const c = CITIES[k];
+    hotMat[k] = {
+      cap: new THREE.MeshStandardMaterial({
+        color: c.capHex,
+        emissive: c.hex, emissiveIntensity: 0.30,
+        roughness: 0.5, metalness: 0.4,
+      }),
+      side: new THREE.MeshStandardMaterial({
+        color: c.sideHex,
+        emissive: c.hex, emissiveIntensity: 0.16,
+        roughness: 0.7, metalness: 0.4,
+      }),
+    };
+  }
+
+  /* ---------------------------------------------------- 组 */
+
+  const world = new THREE.Group();
+  scene.add(world);
+
+  const gLand = new THREE.Group();      // 省块
+  const gLine = new THREE.Group();      // 省界描边
+  const gGlow = new THREE.Group();      // 底部光晕
+  world.add(gGlow, gLand, gLine);
+
+  /* ---------------------------------------------------- 星空（轻量点缀） */
+
+  (function stars() {
+    const N = 780;
+    const pos = new Float32Array(N * 3);
+    const col = new Float32Array(N * 3);
+    const base = new THREE.Color();
+    for (let i = 0; i < N; i++) {
+      const r = 5.0 + Math.random() * 9;
+      const th = Math.random() * Math.PI * 2;
+      /* 均匀球面分布：相机是俯视的，只铺上半球的话一颗都看不见 */
+      const ph = Math.acos(2 * Math.random() - 1);
+      pos[i * 3] = r * Math.sin(ph) * Math.cos(th);
+      pos[i * 3 + 1] = r * Math.cos(ph);
+      pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
+      /* 星点：原来是冷青（hue 0.48~0.58），像太空里的星野。
+         古风里这层更像绢面上的洒金屑 / 星宿图 —— 挪到暖象牙色，并整体压暗，
+         免得和地图抢视线。数量、位置、随相机转动的做法全部不变。 */
+      base.setHSL(0.10 + Math.random() * 0.045, 0.30, 0.58 + Math.random() * 0.30);
+      col[i * 3] = base.r; col[i * 3 + 1] = base.g; col[i * 3 + 2] = base.b;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const m = new THREE.PointsMaterial({
+      size: 0.024, sizeAttenuation: true, vertexColors: true,
+      transparent: true, opacity: 0.42, depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    scene.add(new THREE.Points(g, m));
+  })();
+
+  /* ---------------------------------------------------- 地图坐标换算 */
+
+  let toWorld = null;      // (lon, lat) -> [mx, my]
+  let MAP = null;          // 数据
+
+  /* ---------------------------------------------------- 底部光晕 */
+
+  (function halo() {
+    const S = 512;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = S;
+    const ctx = cv.getContext('2d');
+    const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    g.addColorStop(0.00, 'rgba(122,100,60,0.34)');
+    g.addColorStop(0.30, 'rgba(80,68,44,0.18)');
+    g.addColorStop(0.62, 'rgba(48,40,26,0.07)');
+    g.addColorStop(1.00, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, S, S);
+
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.55, 2.55),
+      new THREE.MeshBasicMaterial({
+        map: tex, transparent: true, depthWrite: false,
+        blending: THREE.AdditiveBlending, opacity: 0.9,
+      })
+    );
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.y = -0.05;
+    gGlow.add(mesh);
+  })();
+
+  /* ---------------------------------------------------- 城市标记 */
+
+  const cityNodes = {};      // key -> { group, top, halo, pulse, ring }
+
+  function makeRadialTexture(inner, outer) {
+    const S = 128;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = S;
+    const ctx = cv.getContext('2d');
+    const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    g.addColorStop(0, inner);
+    g.addColorStop(0.4, outer);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, S, S);
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+
+  const beamMat = (hex) => new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: new THREE.Color(hex) },
+      uOpacity: { value: 1.0 },
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main(){
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor;
+      uniform float uOpacity;
+      varying vec2 vUv;
+      void main(){
+        // vUv.y: 0 在底、1 在顶 —— 底部实、顶部渐隐
+        float a = pow(1.0 - vUv.y, 1.9);
+        float edge = smoothstep(0.0, 0.35, 1.0 - abs(vUv.x - 0.5) * 2.0);
+        gl_FragColor = vec4(uColor, a * edge * uOpacity);
+      }`,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+  });
+
+  function buildCity(key) {
+    const c = CITIES[key];
+    const p = toWorld(c.lon, c.lat);
+    const topY = TOP_Y + MAP_LIFT + 0.001;
+    const x = p[0], z = -p[1];
+
+    const g = new THREE.Group();
+    g.position.set(x, topY, z);
+
+    const BEAM_H = 0.155;
+
+    /* 光柱 */
+    const beam = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0028, 0.0042, BEAM_H, 18, 1, true),
+      beamMat(c.hex)
+    );
+    beam.position.y = BEAM_H / 2;
+    g.add(beam);
+
+    /* 光柱外层的柔光柱（更粗、更淡） */
+    const beam2 = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0085, 0.0125, BEAM_H * 0.9, 18, 1, true),
+      (() => {
+        const m = beamMat(c.hex);
+        m.uniforms.uOpacity.value = 0.26;
+        return m;
+      })()
+    );
+    beam2.position.y = BEAM_H * 0.45;
+    g.add(beam2);
+
+    /* 顶部节点光点 */
+    const dotTex = makeRadialTexture('rgba(255,246,226,1)', `rgba(${c.rgb},0.62)`);
+    const dot = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: dotTex, transparent: true, depthWrite: false,
+      blending: THREE.AdditiveBlending, color: 0xffffff,
+    }));
+    dot.scale.setScalar(0.072);
+    dot.position.y = BEAM_H;
+    g.add(dot);
+
+    /* 地面脉冲环 */
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: c.hex, transparent: true, opacity: 0.85,
+      depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.92, 1.0, 64), ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.0006;
+    ring.scale.setScalar(0.030);
+    g.add(ring);
+
+    /* 地面常亮底环 */
+    const baseRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.78, 1.0, 64),
+      new THREE.MeshBasicMaterial({
+        color: c.hex, transparent: true, opacity: 0.5,
+        depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+      })
+    );
+    baseRing.rotation.x = -Math.PI / 2;
+    baseRing.position.y = 0.0004;
+    baseRing.scale.setScalar(0.020);
+    g.add(baseRing);
+
+    gLand.add(g);
+
+    /* 不可见的点击热区（比标记大，方便点中）。
+       注意用 opacity:0 而不是 visible:false —— 后者在某些版本里会被 raycast 跳过 */
+    const hit = new THREE.Mesh(
+      new THREE.SphereGeometry(0.032, 12, 12),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, depthTest: false })
+    );
+    hit.position.set(x, topY + BEAM_H * 0.5, z);
+    hit.userData.city = key;
+    world.add(hit);
+
+    /* base = 光柱根部世界高度；mid = 光柱的"视觉中心"高度。
+       飞行终点拿 mid 当焦点，镜头停稳时柱身与顶端标签都落在画面中央附近
+       （之前硬编码 0.062 落在柱脚，看着就像"没对准我点的地方"）。 */
+    cityNodes[key] = {
+      group: g, beam, beam2, dot, ring, ringMat,
+      top: topY + BEAM_H, base: topY, mid: topY + BEAM_H * 0.52, hit,
+    };
+  }
+
+  /* ---------------------------------------------------- 文创坊（简易三维店铺） */
+
+  /* 匾额 / 幌子的贴图：把中文字直接画进 canvas。
+     不引任何网络字体（与「离线永远可用」同一条原则），落到系统宋体上。
+     ★ 不用 ctx.letterSpacing —— 各版本支持不一；逐字自己摆，字距才可控。 */
+  function makeSignTexture(text, opt) {
+    opt = opt || {};
+    const W = opt.w || 512, H = opt.h || 128;
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+
+    /* 底：朱漆。竖向渐变比纯色更像髹漆的木匾 */
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0.00, '#953226');
+    g.addColorStop(0.50, '#7d261c');
+    g.addColorStop(1.00, '#5e1913');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    /* 金框：外粗内细两道，是匾额的常规做法 */
+    const lw = Math.max(4, Math.round(H * 0.045));
+    ctx.strokeStyle = 'rgba(216,182,118,.92)';
+    ctx.lineWidth = lw;
+    ctx.strokeRect(lw / 2 + 1, lw / 2 + 1, W - lw - 2, H - lw - 2);
+    ctx.strokeStyle = 'rgba(216,182,118,.36)';
+    ctx.lineWidth = Math.max(1, Math.round(H * 0.014));
+    ctx.strokeRect(H * 0.14, H * 0.14, W - H * 0.28, H - H * 0.28);
+
+    /* 字：金字。纵向排（幌子）与横向排（匾额）两套摆法 */
+    const fs = Math.round(H * (opt.fontScale || 0.50));
+    ctx.font = `600 ${fs}px "Source Han Serif SC","Noto Serif SC","Songti SC","STSong","SimSun","宋体",serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(255,232,180,.6)';
+    ctx.shadowBlur = Math.max(2, fs * 0.05);
+    ctx.fillStyle = '#f2ddaa';
+
+    const chars = [...text];
+    const step = fs * (opt.track || 1.20);
+    if (opt.vertical) {
+      let y = H / 2 - (chars.length - 1) * step / 2;
+      for (const ch of chars) { ctx.fillText(ch, W / 2, y); y += step; }
+    } else {
+      let x = W / 2 - (chars.length - 1) * step / 2;
+      for (const ch of chars) { ctx.fillText(ch, x, H / 2 + fs * 0.03); x += step; }
+    }
+
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  }
+
+  /* 店铺挂在自己的 group 上（与 world 平级）。
+     原点放在店铺中心 —— 切换视图时缩放它是「从店铺自己的中心长大 / 收起」，
+     而不是朝着地图原点飞走。 */
+  const gShop = new THREE.Group();
+  gShop.position.set(SHOP.x, 0, SHOP.z);
+  gShop.visible = false;
+  scene.add(gShop);
+
+  let shopHit = null;
+  let shopRefs = null;        // { flagPivot, lamps, signMat, deckGlow, roof, sign, doors, poster }
+  let doors = null;           // 两扇门 pivot：[{ pivot, sx }]，进店时绕外侧铰链摆开
+
+  (function buildShop() {
+    const M = {
+      stone:    new THREE.MeshStandardMaterial({ color: 0x6f6a5e, roughness: 0.88, metalness: 0.10 }),
+      stoneLit: new THREE.MeshStandardMaterial({ color: 0x8d8676, roughness: 0.84, metalness: 0.10 }),
+      wood:     new THREE.MeshStandardMaterial({ color: 0x7a4a2e, roughness: 0.72, metalness: 0.06 }),
+      woodDark: new THREE.MeshStandardMaterial({ color: 0x452818, roughness: 0.78, metalness: 0.06 }),
+      wall:     new THREE.MeshStandardMaterial({ color: 0xd9cdb4, roughness: 0.92, metalness: 0.02 }),
+      tile:     new THREE.MeshStandardMaterial({ color: 0x3c4348, roughness: 0.60, metalness: 0.26 }),
+      dark:     new THREE.MeshStandardMaterial({ color: 0x271f17, roughness: 0.86, metalness: 0.05 }),
+      brass:    new THREE.MeshStandardMaterial({ color: 0xb08640, roughness: 0.42, metalness: 0.55 }),
+    };
+    const box = (w, h, d, mat) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+
+    /* ── 六角台基（两级台明）。台明本来就是「贴着房子的一圈台阶」，
+         半径只比店身外扩一点点 —— 早先给了 0.325（屋身宽的 2.8 倍），
+         铺出来像一座祭坛，不像一间铺子。 ── */
+    const base1 = new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.216, 0.013, 6), M.stone);
+    base1.position.y = 0.0065;
+    gShop.add(base1);
+    const base2 = new THREE.Mesh(new THREE.CylinderGeometry(0.180, 0.191, 0.014, 6), M.stoneLit);
+    base2.position.y = 0.020;
+    gShop.add(base2);
+
+    /* 台明描金：一圈与地图省界同语言的细金线。
+       ★ 顶点用 (sin, cos) 而非 (cos, sin) —— CylinderGeometry 的圆是
+         x = r·sinθ、z = r·cosθ 生成的，沿用同一套参数六边形才对得上，否则整体偏 30°。 */
+    {
+      const p = [];
+      for (let i = 0; i < 6; i++) {
+        const a = i / 6 * Math.PI * 2;
+        p.push(Math.sin(a) * 0.183, 0.0276, Math.cos(a) * 0.183);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+      gShop.add(new THREE.LineLoop(geo, new THREE.LineBasicMaterial({
+        color: 0xc9a86a, transparent: true, opacity: 0.5, depthWrite: false,
+      })));
+    }
+
+    /* 地面柔光：与地图底面光晕同一套加法混合，让店铺「坐」在光上而不是浮着 */
+    const deckGlow = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.88, 0.88),
+      new THREE.MeshBasicMaterial({
+        map: makeRadialTexture('rgba(214,168,100,.62)', 'rgba(150,90,50,.20)'),
+        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.70,
+      })
+    );
+    deckGlow.rotation.x = -Math.PI / 2;
+    deckGlow.position.y = 0.0295;
+    gShop.add(deckGlow);
+
+    /* ── 屋身 ──
+       ★ 不再是一整块实心 box：正脸拆成「门楣 + 左右墩」，门洞（x ±0.047、
+         y 0.027~0.106）后面围出一个**暗色内腔** —— 门一开能看到空间进深，
+         而不是一堵实心墙皮。三块外观与原整墙完全一致（同材质、互补尺寸），
+         内腔藏在洞后，从外面看轮廓零变化。 */
+    const bodyW = 0.235, bodyH = 0.118, bodyD = 0.175, bodyY = 0.027;
+    const topOfBody = bodyY + bodyH;                  // = 0.145
+    /* 门洞几何（enterShopSequence 的穿门路径也用它 —— 两处必须同步） */
+    const DOOR_HW = 0.047;                            // 洞半宽
+    const DOOR_TOP = 0.106;                           // 洞上沿
+    const DOOR_Y = (bodyY + DOOR_TOP) / 2;            // 洞中心 y = 0.0665
+    const DOOR_HH = (DOOR_TOP - bodyY) / 2;           // 洞半高 = 0.0395
+    {
+      const pierW = (bodyW / 2 - DOOR_HW);            // 0.0705
+      const lintelH = topOfBody - DOOR_TOP;           // 0.039
+      for (const sx of [-1, 1]) {                     // 左右墩（通高、通深）
+        const pier = box(pierW, DOOR_TOP - bodyY, bodyD, M.wall);
+        pier.position.set(sx * (DOOR_HW + pierW / 2), bodyY + (DOOR_TOP - bodyY) / 2, 0);
+        gShop.add(pier);
+      }
+      const lintel = box(bodyW, lintelH, bodyD, M.wall);
+      lintel.position.set(0, DOOR_TOP + lintelH / 2, 0);
+      gShop.add(lintel);
+      /* 背封板：补上原实心 box 背面被拆掉的那一块，防止从房子背后看穿堂 */
+      const backPlug = box(DOOR_HW * 2, DOOR_HH * 2, 0.006, M.wall);
+      backPlug.position.set(0, DOOR_Y, -bodyD / 2 + 0.003);
+      gShop.add(backPlug);
+    }
+
+    /* ── 门后内腔（暗）：五面板围出进深 ≈0.068，靠腔内一盏暖灯读出空间 ──
+       内壁各留 0.003 间隙防 z-fighting（墩内侧面 ±0.047、楣底 0.106、台基顶 0.027）。 */
+    const CAVITY_BACK = 0.020;                        // 内腔后壁 z（腔深 = faceZ − 0.020 ≈ 0.068）
+    const CAVITY_MID = (CAVITY_BACK + bodyD / 2) / 2; // 腔板中心 z ≈ 0.054
+    const CAVITY_LEN = bodyD / 2 - CAVITY_BACK;       // 0.0675
+    const darkIn = new THREE.MeshStandardMaterial({ color: 0x1d140d, roughness: 0.90, metalness: 0.04 });
+    /* poster 声明在块外：下面内腔是裸块 {}，const 出不了块 ——
+       而 buildShop 末尾的 shopRefs 要引用它。块内只赋值。（踩过：块内 const +
+       块外引用 = ReferenceError，整页白屏。） */
+    let poster = null;
+    {
+      const back = box(DOOR_HW * 2 - 0.004, DOOR_HH * 2 - 0.004, 0.006, darkIn);
+      back.position.set(0, DOOR_Y, CAVITY_BACK);
+      gShop.add(back);
+      for (const sx of [-1, 1]) {
+        const side = box(0.006, DOOR_HH * 2 - 0.004, CAVITY_LEN, darkIn);
+        side.position.set(sx * (DOOR_HW - 0.003), DOOR_Y, CAVITY_MID);
+        gShop.add(side);
+      }
+      const ceil = box(DOOR_HW * 2 - 0.004, 0.006, CAVITY_LEN, darkIn);
+      ceil.position.set(0, DOOR_TOP - 0.003, CAVITY_MID);
+      gShop.add(ceil);
+      const floor = box(DOOR_HW * 2 - 0.004, 0.004, CAVITY_LEN, darkIn);
+      floor.position.set(0, bodyY + 0.004, CAVITY_MID);
+      gShop.add(floor);
+      /* 店内海报：文创页整页截图装裱在深木背板上，贴在内腔后壁 ——
+         穿门末帧看到的就是"店里挂着文创铺子的招牌画"，换景前最后一眼有内容。
+         ⚠️ 腔内没有光照，MeshStandardMaterial 会黑掉 —— 必须用不受光的
+         MeshBasicMaterial（背发光灯箱效果）；color 稍压一档，别在暗腔里白得刺眼。
+         ⚠️ 截图 16:9，后壁却近方形 —— poster 按图比例收窄，两侧留出暗墙。
+         纹理 404 时 TextureLoader 静默失败，poster 显示为纯色背板，不崩页面。 */
+      const posterTex = new THREE.TextureLoader().load('assets/wenchuang-preview.png');
+      posterTex.colorSpace = THREE.SRGBColorSpace;
+      posterTex.anisotropy = 4;
+      const posterMat = new THREE.MeshBasicMaterial({ map: posterTex, color: 0xd6d0c4 });
+      const posterW = 0.082, posterH = posterW / (16 / 9);          // 0.046
+      const posterBack = box(posterW + 0.008, posterH + 0.008, 0.002, M.woodDark);
+      posterBack.position.set(0, DOOR_Y - 0.002, CAVITY_BACK + 0.0045);
+      gShop.add(posterBack);
+      poster = new THREE.Mesh(new THREE.PlaneGeometry(posterW, posterH), posterMat);
+      poster.position.set(0, DOOR_Y - 0.002, CAVITY_BACK + 0.0060);
+      gShop.add(poster);
+      /* ★ 挂在左上角、海报上沿与腔顶之间的缝隙（y≈0.0955）：y 与 poster（顶 0.0875）
+         不重叠，z 同平面也不相交 —— 像檐下的一盏小灯。偏出中轴：灯若在正中
+         会被穿门末帧顶成一团正圆橙光（早前的教训）。 */
+      const lampIn = new THREE.Mesh(
+        new THREE.SphereGeometry(0.0050, 12, 10),
+        new THREE.MeshStandardMaterial({
+          color: 0xffc27a, emissive: 0xff9c3f, emissiveIntensity: 0.60,
+          roughness: 0.5, metalness: 0.0,
+        })
+      );
+      lampIn.position.set(-0.028, 0.0955, CAVITY_BACK + 0.006);
+      gShop.add(lampIn);
+    }
+
+    /* 四角立柱（略微外凸，四角才有「柱」的读感） */
+    const colW = 0.017;
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      const col = box(colW, bodyH + 0.010, colW, M.wood);
+      col.position.set(sx * (bodyW / 2 - colW / 2 + 0.0015), bodyY + bodyH / 2,
+                       sz * (bodyD / 2 - colW / 2 + 0.0015));
+      gShop.add(col);
+    }
+
+    /* 正脸（+Z 一侧）：两扇门 + 门环 + 一对侧窗
+       ★ 门做成「铰链在外侧」的可旋转件：每扇门挂在一个 pivot 上，
+         pivot 钉在外侧门框（x = ±HINGE_X），门 mesh 在 pivot 内偏移 −sx·0.023，
+         这样 pivot.rotation.y 转 ±θ 时门绕外侧铰链摆动 —— 进店时门才会「敞开」。
+         门环（knob）挂在门上靠近自由端，跟着门一起摆。
+         旋转方向：右门（sx=+1）+θ 向外开（自由端朝 +X/+Z），
+                   左门（sx=−1）−θ 向外开（自由端朝 −X/+Z）。 */
+    const faceZ = bodyD / 2 + 0.0028;                 // ≈0.090
+    doors = [];
+    const HINGE_X = DOOR_HW;                          // 铰链 = 门洞外缘（与上面门洞同源）
+    for (const sx of [-1, 1]) {
+      const pivot = new THREE.Group();
+      pivot.position.set(sx * HINGE_X, bodyY + 0.041, faceZ);
+      gShop.add(pivot);
+
+      const door = box(0.046, 0.076, 0.005, M.woodDark);
+      door.position.set(-sx * 0.023, 0, 0);          // 门中心相对铰链
+      pivot.add(door);
+
+      /* 门环：原世界 x = sx·0.010（靠自由端），相对铰链 = −sx·0.037 */
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.0055, 10, 8), M.brass);
+      knob.position.set(-sx * 0.037, 0.004, 0.0042);
+      pivot.add(knob);
+
+      doors.push({ pivot, sx });
+
+      const win = box(0.042, 0.030, 0.004, M.dark);
+      win.position.set(sx * 0.079, bodyY + 0.076, faceZ);
+      gShop.add(win);
+      const bar = box(0.042, 0.0025, 0.005, M.brass);
+      bar.position.set(sx * 0.079, bodyY + 0.076, faceZ + 0.0018);
+      gShop.add(bar);
+    }
+
+    /* ── 檐口板（额枋）：匾额就挂在这块板的正脸上 ──
+       ★ 这里是整个模型最要紧的一处几何：檐口板必须与屋顶前缘**几乎齐平**。
+         上一版屋檐出挑 0.08、匾额缩在檐下 0.077，从任何像样的俯角看过去
+         匾额都被屋檐盖死，只剩檐下一条黑影。出挑收到 0.005 之后，
+         连 50° 的俯角都压不住它 —— 因为视线根本不需要"绕过"屋檐。 */
+    const FASCIA_D = 0.212;                           // 半深 0.106
+    const fascia = box(0.258, 0.030, FASCIA_D, M.wood);
+    fascia.position.y = 0.150;
+    gShop.add(fascia);
+    /* 挂落/雀替一排：让檐下与墙面之间有过渡，不至于两截色块硬接 */
+    for (let i = -3; i <= 3; i++) {
+      const dou = box(0.017, 0.011, 0.013, M.woodDark);
+      dou.position.set(i * 0.032, 0.130, FASCIA_D / 2 - 0.002);
+      gShop.add(dou);
+    }
+
+    /* ── 匾额：贴在檐口板正脸，并略微探出屋顶前缘（0.003），任何俯角都读得到 ── */
+    const signMat = new THREE.MeshStandardMaterial({
+      map: makeSignTexture('文创坊', { w: 512, h: 116, fontScale: 0.56, track: 1.15 }),
+      roughness: 0.55, metalness: 0.14,
+      emissive: 0x2a0d08, emissiveIntensity: 0.5,
+    });
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.115, 0.026), signMat);
+    sign.position.set(0, 0.150, FASCIA_D / 2 + 0.008);
+    gShop.add(sign);
+
+    /* ── 屋顶：单檐四坡攒尖 ──
+       CylinderGeometry(·, r, ·, 4) 的四个顶点落在坐标轴上（距轴 r）——
+       也就是**没转之前它是个菱形**，面距只有 r/√2；转 45° 之后才变成
+       轴对齐的正方形，半边长 = r/√2。这里索性取 r = √2（半边长 = 1），
+       之后要什么比例就直接填，不用再心算 √2。
+
+       ⚠️⚠️ 一个已经踩塌过的坑：**缩放与旋转的先后**。
+       Mesh 的世界变换是 T·R·S —— scale **先于** rotation 生效。所以
+         mesh.rotation.y = π/4;  mesh.scale.x = 1.24;
+       实际做的是「先把菱形沿 x 拉长，再整体转 45°」→ 得到一个**斜的菱形**
+       （长轴指向前左 / 后右 45°），而不是长方形。症状：屋顶像被拧过一道，
+       四个角朝斜向戳出去 —— 前角会盖掉匾额（前棱在 x=0 处比匾额还靠前 0.008），
+       右角会吃掉灯笼。
+       ✅ 正解：两步都烘进 geometry（rotateY → scale），
+         得到的才是真正轴对齐的长方形屋面。 */
+    const ROOF_HX = 0.137;                            // 屋顶半宽（x，面宽方向）
+    const ROOF_HZ = 0.110;                            // 屋顶半深（z，进深方向）
+    const ROOF_Y0 = 0.165;                            // 屋顶底面高度
+    const ROOF_H = 0.084;                             // 举高（0.070 太扁，会读成一块盖板）
+
+    const roofGeo = new THREE.CylinderGeometry(Math.SQRT2 * 0.08, Math.SQRT2, ROOF_H, 4);
+    roofGeo.rotateY(Math.PI / 4);                     // 菱形 → 轴对齐正方（半边长 = 1）
+    roofGeo.scale(ROOF_HX, 1, ROOF_HZ);               // 正方 → 目标长方形
+    const roof = new THREE.Mesh(roofGeo, M.tile);
+    roof.position.y = ROOF_Y0 + ROOF_H / 2;
+    gShop.add(roof);
+
+    /* 屋顶前缘描金：一条线就把「一片瓦顶」和「一坨深色体块」分开了。
+       顶点直接按目标半宽/半深走 —— 与屋面同源，不会像上一版那样
+       描线是长方形、屋面却是斜菱形，两者错开。 */
+    {
+      const p = [];
+      for (const [sx, sz] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) {
+        p.push(sx * ROOF_HX * 1.006, ROOF_Y0, sz * ROOF_HZ * 1.006);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+      gShop.add(new THREE.LineLoop(geo, new THREE.LineBasicMaterial({
+        color: 0xc9a86a, transparent: true, opacity: 0.60, depthWrite: false,
+      })));
+    }
+
+    const finial = new THREE.Mesh(new THREE.SphereGeometry(0.011, 12, 10), M.brass);
+    finial.position.y = ROOF_Y0 + ROOF_H + 0.006;
+    gShop.add(finial);
+
+    /* ── 灯笼一对（挑在檐口前缘两角）—— 兼作"营业中"的暖光点 ──
+       z 放到 0.112（屋顶前缘 0.110 之外）：从正面看绝不被屋檐挡住。
+
+       ⚠️ 两个曾经踩过的坑：
+       1) **别靠 emissive 把灯点亮**。纯自发光在球面上是**均匀**的，没有任何
+          明暗过渡，渲出来就是一个平贴的色片（拉近看像 UI 上的一个圆点，
+          完全不像灯笼）。留一半亮度给漫反射（emissive 0.2~0.4），
+          球体才有体积感。见 tick 里的呼吸值。
+       2) **必须有吊线**。孤零零一个球挂在檐下，读起来是"浮在那儿"，
+          加一根细铜线接到屋顶底面，才成为"挂着的灯"。 */
+    const lamps = [];
+    const LAMP_X = 0.126, LAMP_Y = 0.136, LAMP_Z = 0.112, LAMP_R = 0.0104, LAMP_SY = 1.18;
+    for (const sx of [-1, 1]) {
+      const lamp = new THREE.Mesh(
+        new THREE.SphereGeometry(LAMP_R, 14, 12),
+        new THREE.MeshStandardMaterial({
+          color: 0xb5483a, emissive: 0xb5483a, emissiveIntensity: 0.32,
+          roughness: 0.62, metalness: 0.02,
+        })
+      );
+      lamp.scale.set(1, LAMP_SY, 1);
+      lamp.position.set(sx * LAMP_X, LAMP_Y, LAMP_Z);
+      gShop.add(lamp);
+      lamps.push(lamp);
+
+      /* 吊线：从屋顶底面**往下 0.001** 处垂下（收在檐口金线之内，
+         否则线头会戳出屋檐、像一根插进瓦里的木棍），接到灯笼顶。
+         半径 0.0007 —— 拉近看是一根细铜丝；0.0011 会读成一根木棍。 */
+      const lampTop = LAMP_Y + LAMP_R * LAMP_SY;
+      const cordH = (ROOF_Y0 - 0.001) - lampTop;
+      const cord = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.0007, 0.0007, cordH, 6), M.brass
+      );
+      cord.position.set(sx * LAMP_X, lampTop + cordH / 2, LAMP_Z);
+      gShop.add(cord);
+    }
+
+    /* ── 幌子：竹竿 + 布幡。幡挂在竿顶的独立 pivot 上，好让它自然摆。
+         竿立在台明上、店身右前方（x 0.152 已在屋顶半宽 0.136 之外，不会被瓦顶吃掉）。 ── */
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.0032, 0.0032, 0.20, 8), M.woodDark);
+    pole.position.set(0.152, 0.127, 0.070);
+    gShop.add(pole);
+
+    const flagPivot = new THREE.Group();
+    flagPivot.position.set(0.152, 0.225, 0.070);
+    gShop.add(flagPivot);
+    const flag = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.038, 0.085),
+      new THREE.MeshStandardMaterial({
+        map: makeSignTexture('文创', { w: 256, h: 576, fontScale: 0.115, track: 1.05, vertical: true }),
+        side: THREE.DoubleSide, roughness: 0.85, metalness: 0.02,
+      })
+    );
+    flag.position.set(0.020, -0.048, 0);
+    flagPivot.add(flag);
+    const hook = new THREE.Mesh(new THREE.SphereGeometry(0.0055, 10, 8), M.brass);
+    hook.position.set(0, 0.002, 0);
+    flagPivot.add(hook);
+
+    /* ── 热区：比店身大一圈，方便点中。
+         用 opacity:0 而不是 visible:false —— 后者在某些版本里会被 raycast 跳过
+         （与城市标记同一处理） ── */
+    shopHit = new THREE.Mesh(
+      new THREE.BoxGeometry(0.40, 0.38, 0.38),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, depthTest: false })
+    );
+    shopHit.position.set(0, 0.135, 0);    // 本地坐标：group 已带着 SHOP.x / SHOP.z
+    shopHit.userData.city = SHOP.key;
+    gShop.add(shopHit);
+
+    /* roof / sign 也挂上：无头验证要直接读屋顶底面的四角坐标来证「是长方形不是菱形」，
+       以及比匾额与屋顶前缘的前后关系。见 tools/e2e_shop.mjs。 */
+    shopRefs = { flagPivot, lamps, signMat, deckGlow, roof, sign, doors, poster };
+  })();
+
+  /* ---------------------------------------------------- 构建地图 */
+
+  function buildMap(data) {
+    MAP = data;
+    const albers = makeAlbers(data.proj.lon0, data.proj.lat1, data.proj.lat2, data.proj.lat0);
+    const N = data.norm;
+    toWorld = (lon, lat) => {
+      const q = albers(lon, lat);
+      return [(q[0] - N.cx) / N.span, (q[1] - N.cy) / N.span];
+    };
+
+    const Q = data.quant;
+    /* 省界描线：原来是青玉亮线（0x5fbdb2），像发光电路。
+       古图里省界是以**描金**勾的 —— 色相挪到金、亮度压下来，
+       只在青绿石面上留一道细金线，仍然靠"亮线 + 深底"保证看得清。 */
+    const lineMat = new THREE.LineBasicMaterial({
+      color: 0xb09a66, transparent: true, opacity: 0.46, depthWrite: false,
+    });
+    const lineMatHot = {
+      suzhou: new THREE.LineBasicMaterial({
+        color: 0x8fd4b8, transparent: true, opacity: 0.88, depthWrite: false }),
+      gejin: new THREE.LineBasicMaterial({
+        color: 0xf0cf94, transparent: true, opacity: 0.88, depthWrite: false }),
+    };
+    /* 九段线：古图上以朱笔划界，这里用朱砂，和绢底对比也最清楚 */
+    const lineMatDash = new THREE.LineBasicMaterial({
+      color: 0xc35a3e, transparent: true, opacity: 0.90, depthWrite: false,
+    });
+
+    const smallPts = [];        // 极小岛礁 → 发光点
+    let faceCount = 0, skipped = 0;
+
+    for (const prov of data.provinces) {
+      const hotKey = HOT[prov.c] || null;
+      const lift = hotKey ? MAP_LIFT : 0;
+      /* 用 adcode 派生微小高度差，避免相邻省块共面闪烁 */
+      const jitter = ((prov.c % 7) - 3) * 0.00062;
+      const baseY = lift + jitter;
+
+      const capMat = hotKey ? hotMat[hotKey].cap : landMaterials(prov.c)[0];
+      const sideMat = hotKey ? hotMat[hotKey].side : landMaterials(prov.c)[1];
+      const lMat = hotKey ? lineMatHot[hotKey] : lineMat;
+
+      for (const poly of prov.p) {
+        const outer = poly[0];
+        /* 外环 */
+        const pts = [];
+        let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+        for (let i = 0; i < outer.length; i += 2) {
+          const mx = outer[i] / Q, my = outer[i + 1] / Q;
+          pts.push([mx, my]);
+          if (mx < minx) minx = mx;
+          if (mx > maxx) maxx = mx;
+          if (my < miny) miny = my;
+          if (my > maxy) maxy = my;
+        }
+        if (pts.length < 3) { skipped++; continue; }
+
+        const diag = Math.hypot(maxx - minx, maxy - miny);
+        const cx = (minx + maxx) / 2, cy = (miny + maxy) / 2;
+
+        /* 极小岛礁：不挤出，收集为发光点，避免亚像素面片闪烁 */
+        if (diag < SMALL_DIAG) {
+          smallPts.push(cx, -cy);
+          skipped++;
+          continue;
+        }
+
+        const shape = new THREE.Shape();
+        shape.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1]);
+        shape.closePath();
+
+        /* 内环（孔）—— 当前数据没有，但保留兼容 */
+        for (let h = 1; h < poly.length; h++) {
+          const hole = poly[h];
+          if (hole.length < 6) continue;
+          const hp = new THREE.Path();
+          hp.moveTo(hole[0] / Q, hole[1] / Q);
+          for (let i = 2; i < hole.length; i += 2) hp.lineTo(hole[i] / Q, hole[i + 1] / Q);
+          hp.closePath();
+          shape.holes.push(hp);
+        }
+
+        let geo;
+        try {
+          geo = new THREE.ExtrudeGeometry(shape, {
+            depth: MAP_THICK, curveSegments: 1,
+            bevelEnabled: true, bevelThickness: BEVEL, bevelSize: 0.0016, bevelSegments: 1,
+          });
+        } catch (e) {
+          /* 倒角对自相交轮廓偶尔会崩，退回无倒角再来一次 */
+          try {
+            geo = new THREE.ExtrudeGeometry(shape, {
+              depth: MAP_THICK, bevelEnabled: false, curveSegments: 1,
+            });
+          } catch (e2) { skipped++; continue; }
+        }
+        geo.rotateX(-Math.PI / 2);
+
+        const mesh = new THREE.Mesh(geo, [capMat, sideMat]);
+        mesh.position.y = baseY;
+        gLand.add(mesh);
+        faceCount++;
+
+        /* 描边：外环 */
+        const lp = [];
+        for (const q of pts) lp.push(q[0], baseY + TOP_Y + 0.00040, -q[1]);
+        lp.push(pts[0][0], baseY + TOP_Y + 0.00040, -pts[0][1]);
+        const lg = new THREE.BufferGeometry();
+        lg.setAttribute('position', new THREE.Float32BufferAttribute(lp, 3));
+        gLine.add(new THREE.Line(lg, lMat));
+
+        /* 描边：孔 */
+        for (let h = 1; h < poly.length; h++) {
+          const hole = poly[h];
+          if (hole.length < 6) continue;
+          const hp = [];
+          for (let i = 0; i < hole.length; i += 2) {
+            hp.push(hole[i] / Q, baseY + TOP_Y + 0.00040, -hole[i + 1] / Q);
+          }
+          hp.push(hole[0] / Q, baseY + TOP_Y + 0.00040, -hole[1] / Q);
+          const hg = new THREE.BufferGeometry();
+          hg.setAttribute('position', new THREE.Float32BufferAttribute(hp, 3));
+          gLine.add(new THREE.Line(hg, lMat));
+        }
+      }
+    }
+
+    /* 九段线 */
+    for (const ring of data.nineDash) {
+      const lp = [];
+      let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+      for (let i = 0; i < ring.length; i += 2) {
+        const mx = ring[i] / Q, my = ring[i + 1] / Q;
+        lp.push(mx, TOP_Y + 0.0008, -my);
+        if (mx < minx) minx = mx; if (mx > maxx) maxx = mx;
+        if (my < miny) miny = my; if (my > maxy) maxy = my;
+      }
+      if (lp.length < 6) continue;
+      const lg = new THREE.BufferGeometry();
+      lg.setAttribute('position', new THREE.Float32BufferAttribute(lp, 3));
+      gLine.add(new THREE.Line(lg, lineMatDash));
+      /* 九段线是"线"要素，但同时用发光点强调其端点区域，保证夜光下可见 */
+      smallPts.push((minx + maxx) / 2, -(miny + maxy) / 2);
+    }
+
+    /* 南海诸岛的极小岛礁 → 发光点 */
+    if (smallPts.length >= 6) {
+      const arr = new Float32Array(smallPts.length / 2 * 3);
+      for (let i = 0, j = 0; i < smallPts.length; i += 2, j += 3) {
+        arr[j] = smallPts[i];
+        arr[j + 1] = TOP_Y + 0.0009;
+        arr[j + 2] = smallPts[i + 1];
+      }
+      const sg = new THREE.BufferGeometry();
+      sg.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+      const sm = new THREE.PointsMaterial({
+        color: 0xd9b876, size: 0.0075, sizeAttenuation: true,
+        transparent: true, opacity: 0.80, depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+      gGlow.add(new THREE.Points(sg, sm));
+    }
+
+    /* 城市标记建在地图之上 */
+    for (const k of Object.keys(CITIES)) buildCity(k);
+
+    console.log(`[map] 省块 mesh=${faceCount}，发光点=${smallPts.length / 2}，` +
+                `描边=${gLine.children.length}，跳过=${skipped}`);
+  }
+
+  /* ---------------------------------------------------- 尺寸与取景 */
+
+  /* "全景视角"：按视口比例算出刚好装下整张地图（含南海）的相机位置。
+     地图是竖长条（约 0.86 × 1.00），所以垂直 FOV 通常是限制因素。 */
+  const HOME = {
+    pos: new THREE.Vector3(0, 1.12, 1.09),
+    /* target 就是地图几何中心（世界原点）。数据归一化时按 x∈±0.432、z∈±0.5 居中，
+       所以原点严格是地图中心。★ target 必须落在地图中心：
+       OrbitControls 是绕 target 转的，target 一旦偏离，用户拖动视角时地图就会"画圈"。
+       "俯视透视让地图视觉重心下坠"这个问题改用 setViewOffset 补偿（见 applyLift）。 */
+    tgt: new THREE.Vector3(0, 0, 0),
+  };
+  let viewTouched = false;      // 用户是否已经手动转过视角
+  let spinOn = false;           // 自动旋转（默认关：静态构图才能保证"地图永远在页面中心"）
+  let flying = false;
+  let flyState = null;
+  let doorState = null;        // 进店动画：门敞开 → 穿门推进 → 压暗跳转（见 enterShopSequence / tick）
+
+  /* ---------------------------------------------------- 投影补偿
+     俯视视角下近端放大、远端压扁，地图投影出来的外接矩形中心会比几何中心低
+     约 9.6% 屏高 —— 看起来就是"地图没在页面正中"。
+     这里用 setViewOffset（作用在投影矩阵上的一次固定平移）把画面内容整体上抬，
+     而不是把 controls.target 往南挪：挪 target 会改变旋转中心，用户一拖视角地图就摆圈。
+     飞行进入时这个补偿会渐变为 0，好让"你点的那个点"精确落在画面正中。 */
+  const LIFT_RATIO = 0.096;
+  let liftPx = 0;
+
+  function applyLift(px) {
+    liftPx = px;
+    const W = window.innerWidth, H = window.innerHeight;
+    camera.setViewOffset(W, H, 0, liftPx, W, H);
+  }
+  function baseLift() { return LIFT_RATIO * window.innerHeight; }
+
+  /* 自动旋转：把「相机 + 目标点」当成一个整体，绕地图中心的竖轴刚性旋转。
+     ⚠️ 为什么不用 controls.autoRotate：它只转相机、不动 target。
+     相机与 target 的相对位姿一旦在旋转中改变，地图在画面上的位置就会跟着漂
+     —— 这正是之前"地图看着不在页面中心"的根因。
+     刚性旋转下相机看地图的相对位姿恒定，所以构图（含居中状态）全程不变。 */
+  function spin(dt) {
+    if (!spinOn || viewTouched || flying) return;
+    const a = dt * 0.075;                       // 弧度/秒，约 78 秒转一圈
+    const ca = Math.cos(a), sa = Math.sin(a);
+    for (const v of [camera.position, controls.target]) {
+      const x = v.x * ca + v.z * sa;
+      const z = -v.x * sa + v.z * ca;
+      v.x = x; v.z = z;
+    }
+  }
+
+  function computeHome() {
+    const vFov = camera.fov * Math.PI / 180;
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+    const R = 0.468;                                   // 地图包围半径（含余量）
+    const dist = R / Math.tan(Math.min(vFov, hFov) / 2);
+    /* ★ 相机位置相对 target 计算（不是相对原点）：
+       这样相机永远在"以地图中心为球心"的球面上，任何方位角下地图都稳定居中。 */
+    HOME.pos.copy(HOME.tgt).add(
+      new THREE.Vector3(0, 0.715, 0.700).normalize().multiplyScalar(dist)
+    );
+  }
+
+  function resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    /* 窄屏（竖着的手机）把 FOV 放宽一点，否则地图上下会被切掉 */
+    camera.fov = w / h < 1.05 ? 56 : 42;
+    /* 投影补偿按新视口重算；飞行途中交给飞行插值，别在这里覆盖 */
+    applyLift((flying && flyState) ? liftPx : baseLift());
+    computeHome();
+  }
+  window.addEventListener('resize', () => {
+    resize();
+    if (!viewTouched && !flying) {
+      camera.position.copy(HOME.pos);
+      controls.target.copy(HOME.tgt);
+    }
+  });
+  resize();
+  camera.position.copy(HOME.pos);
+  controls.target.copy(HOME.tgt);
+
+  function resetView(instant) {
+    flying = false;
+    flyState = null;
+    closeShopDoors();                // 离开店景：门关上、进店动画态清掉
+    rush.classList.remove('on');
+    controls.enabled = true;
+    spinOn = false;                  // 用户见过世界了，不再自动转
+    viewTouched = false;             // 交还给视口自适应
+    if (instant) {
+      camera.position.copy(HOME.pos);
+      controls.target.copy(HOME.tgt);
+      applyLift(baseLift());
+    } else {
+      flyState = {
+        p0: camera.position.clone(), p1: HOME.pos.clone(),
+        t0: controls.target.clone(), t1: HOME.tgt.clone(),
+        liftFrom: liftPx, liftTo: baseLift(),
+        start: performance.now(), dur: 900, then: null, back: true,
+      };
+      flying = true;
+      controls.enabled = false;
+    }
+  }
+
+  document.getElementById('btn-reset').addEventListener('click', () => resetView(false));
+
+  /* ══════════════════════════════ 视图切换：地图 ↔ 文创坊 ══════════════════════════════ */
+
+  /* 用一个连续的参数 viewK 表示视图：0 = 地图，1 = 文创坊。
+     ★ 为什么不用「两个独立的入场/退场动画」：那样中途反向点会打架。
+       归一到一个 k 上，tick 每帧从当前值朝目标插值 —— 动画中途再点也能顺着改向。 */
+  let view = 'map';
+  let viewK = 0;
+  let viewAnim = null;            // { from, to, start, dur }
+
+  const MAP_FALL = -0.72;         // 商店视图下地图沉到哪儿
+  const SHOP_RISE = -0.26;        // 地图视图下商店藏在地面以下多深
+  const MIN_S = 0.0008;           // 收到多小算"看不见"（不能给 0，否则矩阵退化）
+
+  /* 缓出回弹：商店"长出来"用，末尾略微过冲再稳住，比匀速放大有生气 */
+  function easeOutBack(x) {
+    const c1 = 1.70158, c3 = c1 + 1;
+    return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+  }
+
+  function applyViewK(k) {
+    /* 地图：k=0 完整；越往商店走越缩、越沉 */
+    const mk = Math.pow(1 - k, 1.15);
+    world.visible = mk > 0.004;
+    world.scale.setScalar(Math.max(mk, MIN_S));
+    world.position.y = MAP_FALL * k;
+
+    /* 商店：k=1 完整；从地面下升起 + 回弹放大 */
+    const sk = Math.max(easeOutBack(k), MIN_S);
+    gShop.visible = k > 0.004;
+    gShop.scale.setScalar(sk);
+    gShop.position.y = SHOP_RISE * (1 - k);
+  }
+
+  function setView(next) {
+    if (next === view) return;
+    view = next;
+    document.body.dataset.view = view;
+    navTxt.textContent = view === 'map' ? '文创坊' : '返回地图';
+    navBtn.dataset.dir = view === 'map' ? 'right' : 'left';
+    navBtn.setAttribute('aria-label', view === 'map' ? '切换到文创坊' : '返回地图');
+    viewAnim = {
+      from: viewK, to: view === 'shop' ? 1 : 0,
+      start: performance.now(), dur: 1150,
+    };
+  }
+
+  /* 点箭头：切到另一卷。往商店走时相机一起推过去（两个动作合成一个），
+     回地图则走 resetView，复用「复位视角」那一套（含投影补偿回正）。 */
+  function enterView(next) {
+    if (next === view) return;
+    setView(next);
+    if (next === 'shop') {
+      flyTo(shopFocus(), SHOP.viewDist, { azim: SHOP.azim, phi: SHOP.phi, dur: 1150 });
+    } else {
+      resetView(false);
+    }
+  }
+
+  navBtn.addEventListener('click', () => enterView(view === 'map' ? 'shop' : 'map'));
+
+  /* ---------------------------------------------------- 飞行进入 */
+
+  /* 商店的飞行焦点：取店身偏上一点（不是地面、也不是屋顶）——
+     停稳时店身与头顶的题匾都落在画面中央附近，地面那两级台明让出下方空间。 */
+  function shopFocus() {
+    return new THREE.Vector3(SHOP.x, 0.135, SHOP.z);
+  }
+
+  /* 通用飞行：从当前机位朝一个目标点推近。
+     ★ 城市那套行为原样保留：
+       1) 焦点取传入的 tgt（城市是光柱视觉中心，商店是店身中段）；
+       2) 相机沿「当前视线方向」推近 —— 方位角默认保留用户当前视角，
+          所以从任意角度看过去都是朝你点的那个点飞，不再一律绕到固定一侧；
+       3) dryRun 仅供自动化验证（飞到终点但不跳转）。
+     opts.azim / opts.phi 给了就锁死 —— 商店必须从正脸看，否则可能对着后墙。 */
+  function flyTo(tgt, dist, opts) {
+    opts = opts || {};
+    const off = camera.position.clone().sub(tgt);
+    const sph = new THREE.Spherical().setFromVector3(off);
+    const curDist = Math.max(sph.radius, 1e-4);
+
+    if (opts.azim !== undefined && opts.azim !== null) sph.theta = opts.azim;
+    /* 俯仰角限制在 35°~55° 之间：靠得更近之后，太平会贴地穿模、太陡只剩俯视图。
+       视角被夹住时"直接推近"的观感依然成立 —— 方位角始终保留用户当前朝向。 */
+    sph.phi = (opts.phi !== undefined && opts.phi !== null)
+      ? opts.phi
+      : Math.min(Math.max(sph.phi, 0.60), 0.96);
+    /* 推近距离取"目标距离"与"当前距离的 78%"中较小者 ——
+       已经凑得很近时不会反而倒退 */
+    sph.radius = Math.min(dist, Math.max(curDist * 0.78, 0.19));
+
+    const to = tgt.clone().add(new THREE.Vector3().setFromSpherical(sph));
+
+    flying = true;
+    controls.enabled = false;
+    spinOn = false;                 // 进入时停掉自动旋转，画面定死在目标上
+    rush.classList.add('on');
+
+    flyState = {
+      p0: camera.position.clone(), p1: to,
+      t0: controls.target.clone(), t1: tgt,
+      /* 投影补偿渐变为 0：这样"你点的那个点"精确落在画面正中（而不是被补偿抬高） */
+      liftFrom: liftPx, liftTo: 0,
+      start: performance.now(), dur: opts.dur || 900,
+      then: opts.then || null, back: false,
+    };
+  }
+
+  /* 服务没起来：抖一下标记 + 提示（城市与商店共用同一套） */
+  function nudgeOffline(el, label) {
+    if (el) {
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+    }
+    toast(`<b>${label}</b> 的服务还没有启动 —— 请先运行 <code>启动全部场景.bat</code>，` +
+          `等标记点变绿再进入。`);
+  }
+
+  function flyToCity(key, dryRun) {
+    if (flying) return;
+    const c = CITIES[key];
+    const node = cityNodes[key];
+    if (!node) return;
+
+    const st = pinEls[key] ? pinEls[key].dataset.s : 'unknown';
+    if (st === 'down') { nudgeOffline(pinEls[key], c.label); return; }
+
+    flyTo(new THREE.Vector3(node.group.position.x, node.mid, node.group.position.z),
+          c.flyDist,
+          { then: dryRun ? null : () => enterScene(c) });
+  }
+
+  /* 飞向文创坊。
+     ★ 与城市不同的一点：如果此刻还在地图视图，顺手把切场动画一起发起 ——
+       「地图收走 + 商店升起 + 相机推过去」本来就是同一个动作的三个面，一次做完最连贯。
+       这时飞行距离远得多（1.46 个世界单位），时长放宽到 1200ms；
+       已经在商店视图里就只是一次普通推近，与两座桥一样 900ms。 */
+  function flyToShop(dryRun) {
+    if (flying || doorState) return;
+    const st = shopPinLed ? shopPinLed.dataset.s : 'unknown';
+    if (st === 'down') { nudgeOffline(shopPinEl, SHOP.label); return; }
+
+    const switching = view !== 'shop';
+    if (switching) setView('shop');
+
+    /* ★ 进店飞行的焦点是「门心」而不是题匾（shopFocus 是给切场观看用的）：
+       用户要的是低角度平视大门 —— 相机终点高度 = 门心 y + dist·cos(phi)，
+       phi 取 1.45（俯角仅 ≈7°，普通观看仍是 SHOP.phi=1.10），
+       抵近站定时大门正好充满画面、视线正对门洞。 */
+    const enterTgt = new THREE.Vector3(SHOP.x, 0.0665, SHOP.z);
+    const flyDur = switching ? 1200 : 900;
+    startDoorAnim(flyDur - 20);            // ★ 开门与抵近飞行同时进行，且同时结束
+    flyTo(enterTgt, SHOP.flyDist, {
+      azim: SHOP.azim, phi: 1.45,
+      dur: flyDur,
+      then: dryRun ? null : startDoorPush,
+    });
+  }
+
+
+  /* 抵近后立刻进入场景。
+     ★ 不再"停稳后再等一会儿"：飞行一结束就压暗并跳转。
+       遮罩淡入只有 0.24s，而新页面加载本身要几百毫秒 —— 旧页面会一直显示到新页面
+       出首帧，所以画面是"抵近 → 迅速压暗 → 新场景"，中间没有空窗。
+     ★ 跳转用 location.href：window.open 脱离用户手势会被拦截。 */
+  function enterScene(c) {
+    veil.classList.add('on');
+    setTimeout(() => {
+      window.location.href = c.url;
+    }, 150);
+  }
+
+  /* 进店动画 v3：**开门与镜头推进同时进行，门全开即推进、到门面就换景**。
+     ★ 点题匾/flyShop 一触发就开门，openDur 对齐抵近飞行时长（差 20ms 收尾）——
+       门开完的那一刻镜头正好站稳，随即无缝进入推进，中间没有静止空档
+       （v2 门 620ms 就开完、飞行却要 900/1200ms，空档 + push 起步缓 = 用户看到的"停顿"）；
+     ★ fly 抵近（then）接「穿门推进」：起步就是最快速度（easeOutCubic，不再用
+       easeInOutCubic —— 它前段几乎不动，又是"停顿感"的另一半来源）；
+       压暗按「相机与门面的距离」提前接管：z < faceZ+0.30 → veil（0.24s）；
+       veil 后 260ms → 跳转。推进只是象征性的一小段（用户：分镜到门口就切），
+       p1 仍设在门内一点，保证路径方向真的朝门洞。 */
+  function startDoorAnim(openDur) {
+    doorState = {
+      phase: 'open',
+      openStart: performance.now(), openDur: openDur || 880,
+      aim: Math.PI * 0.62,                        // ≈112°
+      pushDur: 700,
+      /* 门几何（与 buildShop 同源）：门心 y=0.0665、门面 z=faceZ≈0.090 */
+      p1: new THREE.Vector3(SHOP.x, 0.072, 0.090 - 0.030),        // 门内一点
+      t1: new THREE.Vector3(SHOP.x, 0.060, SHOP.z - 0.040),       // 看向腔内
+      veilZ: 0.090 + 0.300,                       // 距门面 0.30 处就开始压暗
+    };
+    controls.enabled = false;
+    spinOn = false;
+    rush.classList.add('on');
+  }
+
+  /* fly 抵近后的接棒：从抵近点朝门洞推 */
+  function startDoorPush() {
+    if (!doorState) startDoorAnim();              // 兜底（理论上 fly 前必已开门）
+    doorState.phase = 'push';
+    doorState.pushStart = performance.now();
+    doorState.p0 = camera.position.clone();
+    doorState.t0 = controls.target.clone();
+  }
+
+  /* 回地图 / 复位视角时把门关上、动画态清掉（否则下次进场门已经是开的） */
+  function closeShopDoors() {
+    doorState = null;
+    for (const d of (doors || [])) d.pivot.rotation.y = 0;
+  }
+
+  /* ---------------------------------------------------- 拾取 */
+
+  const ray = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  let hoverKey = null;
+  let downAt = null;
+
+  function pick(ev) {
+    const r = canvas.getBoundingClientRect();
+    ndc.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+    ndc.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+    ray.setFromCamera(ndc, camera);
+    const objs = Object.values(cityNodes).map(n => n.hit);
+    /* 商店只在切场基本走完之后才可拾取 —— 动画途中不该点到一个正在升起的小模型 */
+    if (view === 'shop' && viewK > 0.5 && shopHit) objs.push(shopHit);
+    const hits = ray.intersectObjects(objs, false);
+    return hits.length ? hits[0].object.userData.city : null;
+  }
+
+  canvas.addEventListener('pointermove', (ev) => {
+    if (flying) return;
+    const k = pick(ev);
+    if (k !== hoverKey) {
+      hoverKey = k;
+      canvas.classList.toggle('pointing', !!k);
+    }
+  });
+
+  canvas.addEventListener('pointerdown', (ev) => {
+    downAt = { x: ev.clientX, y: ev.clientY, t: performance.now() };
+    canvas.classList.add('grabbing');
+  });
+
+  window.addEventListener('pointerup', (ev) => {
+    canvas.classList.remove('grabbing');
+    if (!downAt) return;
+    const moved = Math.hypot(ev.clientX - downAt.x, ev.clientY - downAt.y);
+    const held = performance.now() - downAt.t;
+    downAt = null;
+    /* 拖动过 / 长按 都不算点击 */
+    if (moved > 6 || held > 700) return;
+    if (ev.target !== canvas) return;
+    const k = pick(ev);
+    if (k === SHOP.key) flyToShop();
+    else if (k) flyToCity(k);
+  });
+
+  /* 标签直接点 */
+  for (const [key, el] of Object.entries(pinEls)) {
+    el.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); flyToCity(key); });
+  }
+
+  /* 商店题匾直接点（与城市标签同一待遇） */
+  shopPinEl.addEventListener('click', (ev) => {
+    ev.preventDefault(); ev.stopPropagation(); flyToShop();
+  });
+
+  /* 键盘：ESC 回地图（已在地图则复位视角），1/2 进两桥，3 进文创坊 */
+  window.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') { if (view !== 'map') enterView('map'); else resetView(false); }
+    if (ev.key === '1') flyToCity('suzhou');
+    if (ev.key === '2') flyToCity('gejin');
+    if (ev.key === '3') flyToShop();
+  });
+
+  /* 用户一开始操作就停掉自动旋转，并标记"视角已由用户接管" */
+  controls.addEventListener('start', () => {
+    spinOn = false;
+    viewTouched = true;
+  });
+
+  /* ---------------------------------------------------- 服务探测 */
+
+  function setPinState(key, s) {
+    const el = pinEls[key];
+    if (el) el.dataset.s = s;
+  }
+
+  /* 文创的服务状态只有一处指示了：商店头顶那块题匾的状态痣。
+     （右上角那枚门帖已删，别再去找 #wenchuang-led —— 它不存在了） */
+  function setWenLed(s) {
+    shopPinLed.dataset.s = s;
+  }
+
+  let probingOn = null;
+  let failStreak = 0;
+  const missCount = {};        // key -> 连续失败次数
+
+  function checkServices() {
+    const jobs = Object.keys(CITIES).map(key => {
+      const c = CITIES[key];
+      return probe(c.url).then(ok => ({ key, ok }));
+    });
+    jobs.push(probe(WENCHUANG_URL).then(ok => ({ key: 'wenchuang', ok })));
+
+    Promise.all(jobs).then(results => {
+      const allFailed = results.every(r => !r.ok);
+      if (probingOn === null) {
+        if (allFailed) {
+          probingOn = false;
+          results.forEach(r => {
+            if (r.key === 'wenchuang') setWenLed('unknown');
+            else setPinState(r.key, 'unknown');
+          });
+          return;
+        }
+        probingOn = true;
+      }
+      results.forEach(r => {
+        const n = (missCount[r.key] || 0);
+        missCount[r.key] = r.ok ? 0 : n + 1;
+        /* ★ 单次失败不立刻判死：本地服务偶发抖动（渲染满载、杀软扫一下、端口瞬时排队）
+           会把标记打回灰色，用户在"服务明明在跑"的情况下点不进去。
+           连续 2 次都失败才敢置 down，第一次失败先维持原状。 */
+        if (!r.ok && missCount[r.key] < 2) return;
+        const s = r.ok ? 'up' : 'down';
+        if (r.key === 'wenchuang') {
+          setWenLed(s);
+        } else {
+          setPinState(r.key, s);
+        }
+      });
+      if (allFailed) { failStreak++; }
+      else failStreak = 0;
+      /* ★ 为什么不再 stopPoll()：
+         这里原来写的是 `if (failStreak >= 15) stopPoll();` —— 15 × 4.2s ≈ 63 秒后
+         探测**永久停止**，而 startPoll() 全文只在启动时调一次、stopPoll 之后没有任何
+         重启路径。后果：用户先开选择页、过一分钟才双击「启动全部场景.bat」，
+         三个标记会**永远**停在灰色回不来 —— 可页面上恰恰写着「等标记点变绿再进入」，
+         用户只能刷新页面才能恢复。
+         现在改成「降频而不停」：连续全挂就把轮询间隔逐级拉长（4.2s → 8.4s → 15s 封顶），
+         任意一次恢复成功立刻回到 4.2s。既省掉长期空转的开销，又保证服务起来后标记能自己变绿。 */
+      adjustPollInterval();
+    });
+  }
+
+  let pollTimer = null;
+  let pollPeriod = 4200;
+  const POLL_FAST = 4200;      // 正常节奏
+  const POLL_MAX = 15000;      // 全挂时的最慢节奏（不再无限退避）
+
+  /* 按 failStreak 决定下一次轮询间隔；间隔变化时重建定时器 */
+  function adjustPollInterval() {
+    const want = failStreak >= 15 ? POLL_MAX
+               : failStreak >= 8  ? Math.round(POLL_FAST * 2)
+               : POLL_FAST;
+    if (want === pollPeriod && pollTimer) return;
+    pollPeriod = want;
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = setInterval(checkServices, pollPeriod); }
+  }
+
+  function startPoll() {
+    stopPoll();
+    pollPeriod = POLL_FAST;
+    pollTimer = setInterval(checkServices, pollPeriod);
+  }
+  function stopPoll() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  /* ---------------------------------------------------- 标签跟随 */
+
+  const tmp = new THREE.Vector3();
+  let W = 1, H = 1;
+
+  /* 世界点 → 屏幕像素。城市标记与商店题匾共用 */
+  function projectTo(x, y, z) {
+    tmp.set(x, y, z).project(camera);
+    return {
+      x: (tmp.x * 0.5 + 0.5) * W,
+      y: (-tmp.y * 0.5 + 0.5) * H,
+      onScreen: tmp.z <= 1,
+    };
+  }
+
+  function updateLabels() {
+    W = window.innerWidth; H = window.innerHeight;
+
+    /* 城市标记：只在「地图还占着画面」时出现。切场途中（viewK 上去了）整体退场，
+       否则会看到两枚标签飘在一张正在缩小的地图上。 */
+    const mapShown = viewK < 0.35;
+    for (const key of Object.keys(CITIES)) {
+      const el = pinEls[key];
+      const node = cityNodes[key];
+      if (!el || !node) continue;
+      if (!mapShown) { el.classList.remove('live'); el.classList.add('off'); continue; }
+
+      const p = projectTo(node.group.position.x, node.top, node.group.position.z);
+      if (!p.onScreen) { el.classList.remove('live'); el.classList.add('off'); continue; }
+      /* 稍微上抬一点，别压住光柱顶端 */
+      el.style.transform = `translate3d(${p.x.toFixed(1)}px,${(p.y - 10).toFixed(1)}px,0)`;
+      /* 锚点离屏（留 90px 余量，让淡出发生在看到边缘之前）就隐藏，屏内才显示 */
+      const pad = 90;
+      const out = p.x < -pad || p.x > W + pad || p.y < -pad || p.y > H + pad;
+      el.classList.toggle('off', out);
+      el.classList.toggle('live', !out);
+    }
+
+    /* 商店题匾：切场走过一半才现身（不然商店还在长，字就先浮出来了）。
+       锚点跟着 group 的缩放走 —— 商店是"长出来"的，题匾得跟着升高，不能钉在半空。 */
+    if (shopPinEl) {
+      if (viewK <= 0.5) {
+        shopPinEl.classList.remove('live');
+        shopPinEl.classList.add('off');
+      } else {
+        const p = projectTo(
+          gShop.position.x,
+          gShop.position.y + SHOP.topY * gShop.scale.y,
+          gShop.position.z
+        );
+        const pad = 120;
+        const out = !p.onScreen || p.x < -pad || p.x > W + pad || p.y < -pad || p.y > H + pad;
+        shopPinEl.style.transform = `translate3d(${p.x.toFixed(1)}px,${(p.y - 16).toFixed(1)}px,0)`;
+        shopPinEl.classList.toggle('off', out);
+        shopPinEl.classList.toggle('live', !out);
+      }
+    }
+  }
+
+  /* ---------------------------------------------------- 主循环 */
+
+  const clock = new THREE.Clock();
+  let lastFrameAt = performance.now();
+
+  function tick() {
+    requestAnimationFrame(tick);
+    const now = performance.now();
+    const t = clock.getElapsedTime();
+    const dt = Math.min((now - lastFrameAt) / 1000, 0.06);   // 掉帧时钳住，避免旋转突跳
+    lastFrameAt = now;
+
+    /* 视图切换动画（地图 ↔ 商店）。与相机飞行各管各的，在同一个时长里一起走完 ——
+       所以「地图收走 + 商店升起 + 相机推过去」是一口气，不是一个接一个。 */
+    if (viewAnim) {
+      const k = Math.min((now - viewAnim.start) / viewAnim.dur, 1);
+      viewK = viewAnim.from + (viewAnim.to - viewAnim.from) * easeInOutCubic(k);
+      applyViewK(viewK);
+      if (k >= 1) { viewK = viewAnim.to; applyViewK(viewK); viewAnim = null; }
+    }
+
+    /* 飞行动画 */
+    if (flying && flyState) {
+      const k = Math.min((now - flyState.start) / flyState.dur, 1);
+      const e = easeInOutCubic(k);
+      camera.position.lerpVectors(flyState.p0, flyState.p1, e);
+      controls.target.lerpVectors(flyState.t0, flyState.t1, e);
+      /* ★ 朝向必须每帧跟着 target 一起走。
+         会 lookAt(target) 的是 controls.update()，而它在飞行途中是被禁用的
+         （原因见下面 else 分支那条注释）—— 所以不在这里补这一句，相机就会
+         整段保持「上一个视图的朝向」，直到飞行结束那一帧才被一把拽正。
+         地图 → 文创坊 这种首尾朝向差得远的切换，就会明显「跳一下」：
+         实测相机位置/目标/fov 全都没变，投影出的灯笼中点却单帧跳了 581px，
+         且间距同时缩了 3.5%（离轴透视畸变消失）—— 正是朝向被拽正的那一帧。
+         城市飞行之所以一直没暴露这个问题，只是因为它的方位角被刻意保留、
+         首尾朝向几乎相同，拽不拽正看不出来。
+         放在 lerp 之后：终点那一帧朝向就等于 controls.update() 会算出的结果，
+         所以随后恢复 controls 也不会再动一下。 */
+      camera.lookAt(controls.target);
+      if (flyState.liftTo !== undefined) {
+        applyLift(flyState.liftFrom + (flyState.liftTo - flyState.liftFrom) * e);
+      }
+      if (k >= 1) {
+        const then = flyState.then;
+        flyState = null;
+        flying = false;
+        if (then) { controls.enabled = false; then(); }
+        else { controls.enabled = true; }
+      }
+    } else {
+      spin(dt);            // 自动旋转（用户一动就停）
+      /* ★ 只在 controls 启用时才 update：
+         抵近后（飞行结束、等跳转的那一百多毫秒）controls 仍是禁用的，
+         此时再调 update() 会让阻尼/距离钳制把相机从终点往外推，画面"弹一下"。
+         禁用状态下相机必须定死在抵近位置。 */
+      if (controls.enabled) controls.update();
+    }
+
+    /* ★ 进店动画：开门与镜头推进同时，到门面就换景。
+       open 段只转门 —— target 由并行的 flyState 管着（两边同时改会打架）；
+       push 段由 fly 抵近后的 startDoorPush 接棒，按 z 阈值提前压暗/跳转。 */
+    if (doorState) {
+      const ds = doorState;
+      if (ds.phase === 'open') {
+        const k = Math.min((now - ds.openStart) / ds.openDur, 1);
+        const e = 1 - Math.pow(1 - k, 3);            // easeOutCubic：开门快、收尾慢
+        const a = ds.aim * e;
+        for (const d of (doors || [])) d.pivot.rotation.y = (d.sx > 0 ? 1 : -1) * a;
+        if (k >= 1) ds.phase = 'await';              // 门开完，等 fly 抵近来接棒
+      } else if (ds.phase === 'push') {
+        const k = Math.min((now - ds.pushStart) / ds.pushDur, 1);
+        const e = 1 - Math.pow(1 - k, 3);            // easeOutCubic：起步就是最快 —— 不许有"停顿感"
+        camera.position.lerpVectors(ds.p0, ds.p1, e);
+        controls.target.lerpVectors(ds.t0, ds.t1, e);
+        camera.lookAt(controls.target);
+        /* ★ 到门就跳：不穿进房内。压暗后 260ms 跳转（正好让 0.24s 淡入走完） */
+        if (!ds.veiled && camera.position.z < ds.veilZ) {
+          veil.classList.add('on'); ds.veiled = true; ds.veilAt = now;
+        }
+        if ((ds.veiled && now - ds.veilAt >= 260) || k >= 1) {
+          doorState = null; enterScene(SHOP);
+        }
+      }
+    }
+
+    /* 城市标记动效 */
+    for (const key of Object.keys(cityNodes)) {
+      const n = cityNodes[key];
+      const c = CITIES[key];
+
+      /* 脉冲环：0 → 2.6 倍，同时淡出 */
+      const per = 2.6;
+      const ph = (t % per) / per;
+      const sc = 0.030 + ph * 0.070;
+      n.ring.scale.setScalar(sc);
+      n.ringMat.opacity = 0.85 * Math.pow(1 - ph, 1.7);
+
+      /* 顶部光点呼吸 */
+      const br = 1 + Math.sin(t * 1.9 + (key === 'gejin' ? 1.6 : 0)) * 0.14;
+      n.dot.scale.setScalar(0.072 * br);
+
+      /* 光柱轻微呼吸（整体压到 0.78 倍：原来满不透明度时柱芯发白，
+         在一张暖绢底上很像全息投影；压一档后仍是同样的加法混合光柱，
+         只是不再抢眼） */
+      const bop = (0.86 + Math.sin(t * 1.5 + (key === 'gejin' ? 2.1 : 0)) * 0.14) * 0.78;
+      n.beam.material.uniforms.uOpacity.value = bop;
+      n.beam2.material.uniforms.uOpacity.value = 0.26 * bop;
+
+      /* 悬停放大一点 */
+      const isHover = hoverKey === key;
+      n.dot.scale.multiplyScalar(isHover ? 1.22 : 1);
+
+      /* 高亮省的材质呼吸 */
+      const hm = hotMat[key];
+      hm.cap.emissiveIntensity = 0.30 + Math.sin(t * 1.25 + (key === 'gejin' ? 2.0 : 0)) * 0.13;
+    }
+
+    /* 商店的小动效：幌子摆、灯笼呼吸、匾额反光。
+       相位都用绝对时间算，所以切场动画中途也是连续的，不会「边长大边抖」。 */
+    if (shopRefs && gShop.visible) {
+      const r = shopRefs;
+      r.flagPivot.rotation.x = Math.sin(t * 1.35) * 0.13 + Math.sin(t * 2.70) * 0.035;
+      r.flagPivot.rotation.z = Math.sin(t * 0.90 + 1.2) * 0.05;
+      /* 灯笼呼吸：压到 0.20~0.42。超过约 0.5 就会把球面的漫反射明暗吃掉，
+         退化成一片平贴的纯色（拉近看尤其明显）。 */
+      const lit = 0.31 + Math.sin(t * 2.10) * 0.11;
+      for (const l of r.lamps) l.material.emissiveIntensity = lit;
+      r.signMat.emissiveIntensity = 0.42 + Math.sin(t * 1.60 + 0.7) * 0.12;
+      r.deckGlow.material.opacity = 0.55 + Math.sin(t * 1.10) * 0.12;
+    }
+
+    renderer.render(scene, camera);
+    updateLabels();
+  }
+
+  /* ---------------------------------------------------- 启动 */
+
+  bootText.textContent = '正在生成三维地图…';
+
+  fetch(DATA_URL)
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(data => {
+      if (!data || !data.provinces || !data.provinces.length) {
+        throw new Error('数据为空');
+      }
+      buildMap(data);
+      applyViewK(0);          // 初始态：地图在位、商店藏在地面以下
+      resize();
+      tick();
+
+      /* 载入层退场后才放出换卷箭头 —— 免得箭头先于地图出现 */
+      setTimeout(() => { bootBox.classList.add('gone'); navBtn.classList.add('on'); }, 260);
+
+      checkServices();
+      startPoll();
+
+      /* 打印一些自检信息，方便排查 */
+      const su = toWorld(CITIES.suzhou.lon, CITIES.suzhou.lat);
+      const gj = toWorld(CITIES.gejin.lon, CITIES.gejin.lat);
+      console.log('[map] 苏州 → x=%s z=%s | 贵州 → x=%s z=%s',
+        su[0].toFixed(4), (-su[1]).toFixed(4),
+        gj[0].toFixed(4), (-gj[1]).toFixed(4));
+
+      /* ---- 自动化验证句柄（只读，不影响正常使用；控制台里也能拿来排查） ---- */
+      window.__scene3d = {
+        camera, controls, cityNodes, CITIES, HOME, renderer, THREE, SHOP,
+
+        /* 商店的零件（roof / sign / lamps …）：给验证脚本直接量几何用 */
+        get shopRefs() { return shopRefs; },
+
+        /* ---- 视图切换（供端到端验证；都走"瞬时版"，跳过过渡动画好截图） ---- */
+        view: () => view,
+        viewK: () => viewK,
+        /* 当前投影补偿（px）。逐帧采样它，能查出"末帧跳一下"是不是补偿在突变 */
+        lift: () => liftPx,
+        /* 切到商店视图：地图收走、商店升起，并把相机瞬移到商店正脸机位 */
+        showShop: () => {
+          if (view !== 'shop') setView('shop');
+          viewAnim = null; viewK = 1; applyViewK(1);
+          const tgt = shopFocus();
+          camera.position.copy(tgt).add(
+            new THREE.Vector3().setFromSpherical(new THREE.Spherical(SHOP.viewDist, SHOP.phi, SHOP.azim))
+          );
+          controls.target.copy(tgt);
+          applyLift(0);
+          controls.update();
+        },
+        /* 回地图视图（同样瞬时） */
+        showMap: () => {
+          if (view !== 'map') setView('map');
+          viewAnim = null; viewK = 0; applyViewK(0);
+          closeShopDoors();
+          camera.position.copy(HOME.pos);
+          controls.target.copy(HOME.tgt);
+          applyLift(baseLift());
+        },
+        /* 走完整过渡（含切场动画）但不跳转 —— 验证"点箭头"这条真实路径 */
+        switchView: (toShop) => enterView(toShop ? 'shop' : 'map'),
+        /* 飞向商店。dryRun 默认 true（飞到终点但不跳转），便于截图与测量 */
+        flyShop: (dry) => flyToShop(dry !== false),
+        /* 商店焦点的屏幕偏差 —— 核对"推近之后是否真的对准了目标"。
+           可选 y：默认店身中段（切场观看语义）；进店飞行的焦点是门心，
+           e2e 传 0.0665 来核对"大门是否落在画面正中"。 */
+        shopOffset: (y) => {
+          const v = new THREE.Vector3(SHOP.x, y !== undefined ? y : shopFocus().y, SHOP.z);
+          v.project(camera);
+          const W = window.innerWidth, H = window.innerHeight;
+          return {
+            dx: (v.x * 0.5) * W, dy: (-v.y * 0.5) * H,
+            onScreen: Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1, viewport: [W, H],
+          };
+        },
+        /* 在给定屏幕坐标跑一次真实射线拾取。用来验证"商店有没有进拾取列表" ——
+           走的是 canvas 上 pointerup 那条完全相同的代码路径。 */
+        pickAt: (x, y) => pick({ clientX: x, clientY: y }),
+        camDistTo: (x, y, z) => camera.position.distanceTo(new THREE.Vector3(x, y, z)),
+        /* 商店题匾锚点投到屏幕，核对"字在不在商店正上方" */
+        shopPinAt: () => {
+          const v = new THREE.Vector3(
+            gShop.position.x,
+            gShop.position.y + SHOP.topY * gShop.scale.y,
+            gShop.position.z
+          );
+          v.project(camera);
+          const W = window.innerWidth, H = window.innerHeight;
+          return {
+            dx: (v.x * 0.5) * W, dy: (-v.y * 0.5) * H,
+            onScreen: Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1, viewport: [W, H],
+          };
+        },
+        /* 商店在世界里的位置/缩放，用来核对切场是否真的发生了 */
+        shopState: () => ({
+          visible: gShop.visible,
+          scale: gShop.scale.x,
+          pos: [gShop.position.x, gShop.position.y, gShop.position.z],
+          mapScale: world.scale.x,
+          mapY: world.position.y,
+        }),
+
+        /* 该城市光柱的焦点（世界坐标） */
+        focusOf: (key) => {
+          const n = cityNodes[key];
+          return new THREE.Vector3(n.group.position.x, n.mid, n.group.position.z);
+        },
+        /* 飞到终点但不跳转，便于截图/测量 */
+        fly: (key) => flyToCity(key, true),
+        /* 把"该城市的光柱焦点"投影到屏幕，返回它与页面中心的像素偏差 */
+        offsetOf: (key) => {
+          const n = cityNodes[key];
+          const v = new THREE.Vector3(n.group.position.x, n.mid, n.group.position.z);
+          v.project(camera);
+          const W = window.innerWidth, H = window.innerHeight;
+          return {
+            dx: (v.x * 0.5) * W,                 // 相对页面中心的像素偏差
+            dy: (-v.y * 0.5) * H,
+            onScreen: Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1,
+            viewport: [W, H],
+          };
+        },
+        /* 地图整体（顶面描边点）投影后的屏幕包围盒 —— 用来核对"地图是否居中" */
+        mapBox: () => {
+          const box = new THREE.Box3().setFromObject(gLine);
+          const W = window.innerWidth, H = window.innerHeight;
+          let minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+          const v = new THREE.Vector3();
+          for (let i = 0; i < 8; i++) {
+            v.set(
+              (i & 1) ? box.max.x : box.min.x,
+              (i & 2) ? box.max.y : box.min.y,
+              (i & 4) ? box.max.z : box.min.z
+            ).project(camera);
+            const x = (v.x * 0.5 + 0.5) * W, y = (-v.y * 0.5 + 0.5) * H;
+            if (x < minx) minx = x; if (x > maxx) maxx = x;
+            if (y < miny) miny = y; if (y > maxy) maxy = y;
+          }
+          return {
+            cx: (minx + maxx) / 2, cy: (miny + maxy) / 2,
+            dx: (minx + maxx) / 2 - W / 2, dy: (miny + maxy) / 2 - H / 2,
+            w: maxx - minx, h: maxy - miny, viewport: [W, H],
+          };
+        },
+        /* 绕地图中心把相机摆到指定方位角/俯仰角 */
+        orbit: (thetaRad, phiRad, radius) => {
+          const t = controls.target;
+          camera.position.copy(t).add(
+            new THREE.Vector3().setFromSpherical(new THREE.Spherical(radius, phiRad, thetaRad))
+          );
+          camera.lookAt(t);
+          controls.update();
+        },
+        /* 开/关自动旋转（自动化验证用） */
+        setSpin: (v) => { spinOn = !!v; },
+      };
+    })
+    .catch(err => {
+      console.error(err);
+      bail('三维地图数据加载失败（' + err.message + '），已切换为列表入口。' +
+           '若通过本地服务器打开请确认 data/china-map.json 存在。');
+    });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "../广州沙面西桥网站部分"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "苏州双桥"
+	}
+}

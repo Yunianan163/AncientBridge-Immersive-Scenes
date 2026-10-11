@@ -1,0 +1,36 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+.vite
+
+# 文创定制：密钥与运行时产物
+.env
+.env.local
+orders/
+server/public/generated/
+# 场景截图素材库：苏州双桥 / 葛镜桥右上角截图存过来的图，属运行时产物
+server/public/scene-shots/
+
+# 量尺寸 / 出图时的中间产物（原生 Windows Python 不认 /tmp，中间文件只能写仓库里）
+docs/联调截图/_tmp/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

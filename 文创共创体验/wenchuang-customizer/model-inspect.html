@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>模型体检 —— 按部位分别上色</title>
+    <style>
+      body { margin: 0; background: #4d4a47; color: #eee; font: 13px/1.6 system-ui, sans-serif; }
+      header { padding: 10px 16px; }
+      h1 { font-size: 15px; font-weight: 500; margin: 0 0 4px; }
+      #report { padding: 0 16px 12px; white-space: pre; font-family: ui-monospace, monospace; font-size: 12px; color: #d8d4cf; }
+      #views { display: flex; gap: 8px; padding: 0 16px 16px; }
+      figure { margin: 0; flex: 1; }
+      figcaption { font-size: 12px; color: #d8d4cf; padding: 4px 0; }
+      canvas { width: 100%; display: block; background: #6b6763; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>模型体检 —— 每个部位单独上色</h1>
+      <div id="report">加载中…</div>
+    </header>
+    <div id="views"></div>
+    <script type="module">
+      import * as THREE from 'three'
+      import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+
+      const params = new URLSearchParams(location.search)
+      const FILE = params.get('file') || 'models/products/mug_a.glb'
+      const USE_TEST_TEXTURE = params.get('tex') !== '0'
+      const palette = [0xe24b4a, 0x378add, 0x639922, 0xef9f27, 0x993556, 0x1d9e75]
+
+      /** 一张「坐标纸」：横轴 U 从左 0 到右 1，纵轴 V 从上 0 到下 1，带刻度与方向标记 */
+      function makeTestTexture() {
+        const S = 1024
+        const canvas = document.createElement('canvas')
+        canvas.width = S
+        canvas.height = S
+        const ctx = canvas.getContext('2d')
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, S, S)
+        ctx.strokeStyle = '#c9c4be'
+        ctx.lineWidth = 2
+        ctx.font = '600 34px ui-monospace, monospace'
+        ctx.fillStyle = '#5f5e5a'
+        // 上方是 V 的 0 端（glTF 约定 uv.v = 0 对应图片顶部）
+        for (let i = 0; i <= 10; i++) {
+          const p = (i / 10) * S
+          ctx.beginPath()
+          ctx.moveTo(p, 0)
+          ctx.lineTo(p, S)
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.moveTo(0, p)
+          ctx.lineTo(S, p)
+          ctx.stroke()
+        }
+        ctx.fillStyle = '#a32d2d'
+        ctx.fillRect(0, 0, S, 6)
+        ctx.fillStyle = '#185fa5'
+        ctx.fillRect(0, 0, 6, S)
+        ctx.fillStyle = '#0c447c'
+        for (let i = 0; i <= 10; i++) {
+          ctx.fillText((i / 10).toFixed(1), (i / 10) * S + 8, 44)
+        }
+        ctx.fillStyle = '#712b13'
+        for (let i = 0; i <= 10; i++) {
+          ctx.fillText((i / 10).toFixed(1), 12, (i / 10) * S + 34 + 44)
+        }
+        ctx.fillStyle = '#1d9e75'
+        ctx.beginPath()
+        ctx.arc(S * 0.5, S * 0.5, S * 0.16, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = '#ffffff'
+        ctx.font = '700 90px ui-monospace, monospace'
+        ctx.fillText('UV', S * 0.5 - 78, S * 0.5 + 32)
+        ctx.fillStyle = '#a32d2d'
+        ctx.font = '700 60px ui-monospace, monospace'
+        ctx.fillText('↑ V=0（图顶）', 40, S - 30)
+
+        const texture = new THREE.CanvasTexture(canvas)
+        texture.colorSpace = THREE.SRGBColorSpace
+        // 和网页端 loadTexture 一致，否则图案会上下颠倒
+        texture.flipY = false
+        texture.wrapS = THREE.RepeatWrapping
+        texture.wrapT = THREE.RepeatWrapping
+        texture.needsUpdate = true
+        return texture
+      }
+
+      const testTexture = USE_TEST_TEXTURE ? makeTestTexture() : null
+
+      const gltf = await new GLTFLoader().loadAsync(FILE)
+      const parts = []
+      gltf.scene.traverse((n) => { if (n.isMesh) parts.push(n) })
+
+      const lines = [`文件 ${FILE}`, `零件 ${parts.length} 个`]
+      parts.forEach((mesh, i) => {
+        mesh.geometry.computeBoundingBox()
+        const box = mesh.geometry.boundingBox
+        const size = new THREE.Vector3()
+        box.getSize(size)
+        const color = palette[i % palette.length]
+        mesh.material = testTexture
+          ? new THREE.MeshStandardMaterial({ map: testTexture, roughness: 0.6, metalness: 0.02, side: THREE.DoubleSide })
+          : new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.05, side: THREE.DoubleSide })
+        mesh.castShadow = false
+        const name = mesh.name || `(未命名 ${i})`
+        lines.push(
+          `${String(i + 1).padStart(2)}. ${name.padEnd(14)} #${color.toString(16).padStart(6, '0')}`
+          + `  ${mesh.geometry.attributes.position.count} 点`
+          + `  尺寸 ${size.x.toFixed(3)} × ${size.y.toFixed(3)} × ${size.z.toFixed(3)}`
+          + `  中心 (${box.getCenter(new THREE.Vector3()).toArray().map((v) => v.toFixed(3)).join(', ')})`,
+        )
+      })
+      lines.push(testTexture ? '贴的是坐标纸：横 U 从左 0 到右 1，纵 V 从图顶 0 到图底 1；加 ?tex=0 可看分色' : '分色模式（?tex=0）')
+      lines.push('提示：颜色 / 坐标纸只用来判断「这块面是哪个零件的、UV 有没有拉伸」，不代表最终外观')
+      document.getElementById('report').textContent = lines.join('\n')
+
+      const scene = new THREE.Scene()
+      scene.background = new THREE.Color(0x6b6763)
+      scene.add(new THREE.AmbientLight(0xffffff, 1.5))
+      const key = new THREE.DirectionalLight(0xffffff, 1.9)
+      key.position.set(4, 6, 8)
+      scene.add(key)
+      const fill = new THREE.DirectionalLight(0xffffff, 0.85)
+      fill.position.set(-6, 3, -6)
+      scene.add(fill)
+
+      const all = gltf.scene
+      all.updateMatrixWorld(true)
+      const box = new THREE.Box3().setFromObject(all)
+      const center = box.getCenter(new THREE.Vector3())
+      const radius = box.getSize(new THREE.Vector3()).length() * 0.5
+
+      const shows = [{ label: '全部', keep: null }]
+      parts.forEach((mesh, i) => shows.push({ label: `${mesh.name}`, keep: mesh }))
+
+      for (const show of shows) {
+        const figure = document.createElement('figure')
+        const canvas = document.createElement('canvas')
+        canvas.width = 420
+        canvas.height = 420
+        const caption = document.createElement('figcaption')
+        caption.textContent = show.label
+        figure.append(canvas, caption)
+        document.getElementById('views').append(figure)
+
+        const local = new THREE.Scene()
+        local.background = new THREE.Color(0x6b6763)
+        local.add(new THREE.AmbientLight(0xffffff, 1.5))
+        const k2 = new THREE.DirectionalLight(0xffffff, 1.9)
+        k2.position.set(4, 6, 8)
+        local.add(k2)
+        const f2 = new THREE.DirectionalLight(0xffffff, 0.85)
+        f2.position.set(-6, 3, -6)
+        local.add(f2)
+
+        const clone = ALL_CLONE()
+        if (show.keep) {
+          const target = show.keep.name
+          clone.traverse((n) => { if (n.isMesh && n.name !== target) n.visible = false })
+        }
+        local.add(clone)
+
+        const camera = new THREE.PerspectiveCamera(35, 1, radius * 0.01, radius * 40)
+        camera.position.set(center.x + radius * 1.5, center.y + radius * 0.9, center.z + radius * 2.0)
+        camera.lookAt(center)
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true })
+        renderer.setSize(420, 420, false)
+        renderer.toneMapping = THREE.ACESFilmicToneMapping
+        renderer.render(local, camera)
+      }
+
+      function ALL_CLONE() {
+        const clone = gltf.scene.clone(true)
+        clone.traverse((n) => {
+          if (!n.isMesh) return
+          const src = parts.find((p) => p.name === n.name)
+          if (src) n.material = src.material
+        })
+        return clone
+      }
+    </script>
+  </body>
+</html>

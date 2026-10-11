@@ -1,0 +1,13 @@
+{
+    "name": "suzhou-shuangqiao-improved-server",
+    "version": "1.0.0",
+    "description": "苏州双桥改进版场景服务器（端口 8083；Build/ 需自行放入 Unity WebGL 构建）",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "sharp": "^0.34.5",
+        "ws": "^8.20.0"
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "name": "suzhou-shuangqiao-server",
+    "version": "1.0.0",
+    "description": "苏州双桥场景服务器（静态资源 + WebSocket + 语音对话桥接，端口 8082）",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "ws": "^8.20.0"
+    }
+}

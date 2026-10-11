@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity Web融合项目</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Unity WebGL Loader -->
+    <script src="Build/UnityLoader.js"></script>
+</head>
+<body>
+    <!-- Unity 嵌入区域 - 充满整个页面作为背景 -->
+    <div id="unity-container">
+        <canvas id="unity-canvas"></canvas>
+        <div id="unity-loading">
+            <div class="unity-loading-spinner"></div>
+            <div class="unity-loading-text">Unity 场景加载中...</div>
+            <div class="unity-loading-progress">
+                <div class="unity-loading-progress-bar" id="unity-progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 中央消息显示 -->
+    <div id="center-message">等待指令...</div>
+
+    <!-- 顶部模型提示 -->
+    <div id="model-hover-tip" class="model-hover-tip" style="display: none;">
+        鼠标悬浮在桥模型上出现有关桥的介绍，点击一下可固定介绍面板
+    </div>
+
+    <!-- 左侧：更多历史介绍窗口 -->
+    <div class="hud-panel locked-panel" id="unlock-intro-panel" style="display: none;">
+        <div class="panel-header">
+            <div class="unlock-panel-header-left">
+                <h3>更多历史介绍</h3>
+                <span class="unlock-status-badge locked" id="unlock-status-badge">待解锁</span>
+            </div>
+            <button class="panel-close-btn" type="button" onclick="closeUnlockIntroPanel()">×</button>
+        </div>
+
+        <div class="unlock-intro-tabs tabs-disabled" id="unlock-intro-tabs">
+            <button class="unlock-tab-btn active" type="button" onclick="switchUnlockIntroTab('basic')">基本信息</button>
+            <button class="unlock-tab-btn" type="button" onclick="switchUnlockIntroTab('history')">历史追溯</button>
+            <button class="unlock-tab-btn" type="button" onclick="switchUnlockIntroTab('culture')">文化内涵</button>
+            <button class="unlock-tab-btn" type="button" onclick="switchUnlockIntroTab('structure')">结构地势</button>
+            <button class="unlock-tab-btn" type="button" onclick="switchUnlockIntroTab('environment')">环境特征</button>
+        </div>
+
+        <div class="unlock-intro-content content-locked" id="unlock-intro-content">
+            <div class="unlock-intro-section active" id="unlock-basic">
+                <h4>基本信息</h4>
+                <div class="scroll-text-box">
+                    <p>这里放古桥的基本信息，例如名称、地理位置、桥型、建造年代、功能用途等说明内容。</p>
+                    <p>你后续可以把这部分替换成正式文案，并继续保持滚动阅读效果。</p>
+                </div>
+            </div>
+
+            <div class="unlock-intro-section" id="unlock-history">
+                <h4>历史追溯</h4>
+                <div class="scroll-text-box">
+                    <p>这里放古桥的历史沿革，例如建桥背景、历代修缮、与地方发展过程相关的重要节点。</p>
+                    <p>后面你可以继续补充时间线、文献资料或历史事件。</p>
+                </div>
+            </div>
+
+            <div class="unlock-intro-section" id="unlock-culture">
+                <h4>文化内涵</h4>
+                <div class="scroll-text-box">
+                    <p>这里放古桥在当地文化中的意义，例如民俗象征、艺术表达、旅游传播、地方记忆等内容。</p>
+                    <p>也可以加入与你项目主题相关的展示说明。</p>
+                </div>
+            </div>
+
+            <div class="unlock-intro-section" id="unlock-structure">
+                <h4>苏州周庄双桥的结构与其地势</h4>
+                <div class="scroll-text-box">
+                    <p>这里放桥梁结构特征、桥身关系、河道地势、交通组织、空间视线等内容。</p>
+                    <p>后续可以加入双桥与整体地形、水系、建筑群落之间的关系描述。</p>
+                </div>
+            </div>
+
+            <div class="unlock-intro-section" id="unlock-environment">
+                <h4>环境特征</h4>
+                <div class="scroll-text-box">
+                    <p>这里放桥周边环境特征，例如水体、岸线、植被、光照、季节变化与桥梁视觉体验之间的联系。</p>
+                    <p>你也可以继续拓展与四季交互相呼应的展示内容。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="unlock-lock-overlay" id="unlock-lock-overlay">
+            <div class="unlock-lock-overlay-content">
+                <div class="lock-icon">🔒</div>
+                <div class="lock-title">尚未解锁</div>
+                <div class="lock-desc">请先完成网页前置任务并操控无人机靠近桥体，解锁后即可查看更多介绍。</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右上角：指令面板 -->
+    <div class="hud-panel" id="command-panel">
+        <h3>指令下发 (TO UNITY)</h3>
+        <input type="text" class="cmd-input" id="cmd-input" placeholder="输入控制指令...">
+        <button class="cmd-btn" type="button" onclick="sendCommand()">发送指令</button>
+
+        <h4 class="log-title">实时系统日志</h4>
+        <div class="log-area" id="log-area">
+            <div class="log-item">等待连接...</div>
+        </div>
+    </div>
+
+    <!-- 左侧：模型介绍窗口 -->
+    <div class="hud-panel" id="model-intro-panel" style="display: none;">
+        <div class="panel-header model-intro-header">
+            <div class="unlock-panel-header-left">
+                <h3>模型介绍</h3>
+                <span class="model-intro-lock-badge" id="model-intro-lock-badge" style="display: none;">已固定</span>
+            </div>
+        </div>
+
+        <div class="model-intro-tabs">
+            <button class="model-tab-btn active" id="tab-shide" type="button" onclick="switchModelIntroTab('shide')">世德桥</button>
+            <button class="model-tab-btn" id="tab-yongan" type="button" onclick="switchModelIntroTab('yongan')">永安桥</button>
+        </div>
+
+        <div class="model-intro-content">
+            <div class="model-intro-section active" id="intro-shide">
+                <h4>世德桥</h4>
+                <p>
+                    这里先放世德桥的模型介绍内容。后面你可以替换成正式文字，比如桥梁年代、建造背景、
+                    结构特点、建筑工艺、文化意义等内容。
+                </p>
+                <p>
+                    后续如果要和 Unity 做双向交互，这一块内容也可以在鼠标悬浮到对应桥体时自动切换。
+                </p>
+            </div>
+
+            <div class="model-intro-section" id="intro-yongan">
+                <h4>永安桥</h4>
+                <p>
+                    这里先放永安桥的模型介绍内容。你后面可以替换成正式文案，例如位置、形制、
+                    历史沿革、修缮记录、艺术特色等说明。
+                </p>
+                <p>
+                    当前先完成网页端固定窗口设计，后面再把 Unity 端桥梁识别和网页自动切换联动接上。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 任务进度面板 -->
+    <div class="hud-panel" id="task-panel">
+        <h3>交互任务进度</h3>
+
+        <div class="task-vertical-list" style="flex-direction: row; gap: 8px;">
+            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+                <div style="display: flex; gap: 8px;">
+                    <div class="task-item-vertical" id="task-spring" style="background-image: url('1.png'); flex: 1;">
+                        <span>春季交互</span>
+                        <span class="task-state"></span>
+                    </div>
+
+                    <div class="task-item-vertical" id="task-summer" style="background-image: url('2.png'); flex: 1;">
+                        <span>夏季交互</span>
+                        <span class="task-state"></span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <div class="task-item-vertical" id="task-autumn" style="background-image: url('3.png'); flex: 1;">
+                        <span>秋季交互</span>
+                        <span class="task-state"></span>
+                    </div>
+
+                    <div class="task-item-vertical" id="task-winter" style="background-image: url('4.png'); flex: 1;">
+                        <span>冬季交互</span>
+                        <span class="task-state"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="task-item-vertical" id="task-view-model" style="background-image: url('5.png'); min-height: 304px;">
+                <span>查看模型及介绍</span>
+                <span class="task-state"></span>
+            </div>
+        </div>
+
+        <div class="task-summary" id="task-summary-text" style="display:none;">
+            请先完成“查看模型及介绍”以及春、夏、秋、冬四季交互，完成后将解锁无人机。
+        </div>
+    </div>
+
+    <!-- 无人机操作指南 -->
+    <div class="hud-panel" id="drone-guide-panel" style="display: none;">
+        <div class="panel-header">
+            <h3>无人机已解锁</h3>
+            <button class="panel-close-btn" type="button" onclick="closeDroneGuidePanel()">×</button>
+        </div>
+
+        <div class="drone-guide-content">
+            <p>你已完成网页端前置交互，现在可以操作 Unity 场景中的无人机。</p>
+            <p><b>空格键</b>：起飞</p>
+            <p><b>L 键</b>：降落</p>
+            <p><b>W / S</b>：向前 / 向后</p>
+            <p><b>A / D</b>：左转 / 右转</p>
+            <p><b>Q / E</b>：水平左转 / 水平右转</p>
+            <hr>
+            <p class="drone-next-tip">
+                请操控无人机继续向前，到桥的旁边后可解锁更多交互和介绍。
+            </p>
+        </div>
+    </div>
+
+    <!-- 中央箭头提示 -->
+    <div class="arrow-hint-container" id="arrow-hint" style="display: none;">
+        <div class="arrow-icon">↑</div>
+        <div class="arrow-text">往前靠近桥可以解锁更多介绍</div>
+    </div>
+
+    <!-- 机器人出现位置提示 -->
+    <div id="robot-location-hint" class="robot-location-hint" style="display: none;">
+        <img src="robot3.png" alt="机器人" class="robot-hint-icon">
+        <span class="robot-hint-text">机器人将出现在世德桥上</span>
+    </div>
+
+    <!-- 进入机器人语音对话按钮 -->
+    <button id="robot-entry-btn" class="robot-entry-btn" style="display: none;" onclick="toggleRobotVoiceDialog()">
+        <img src="robot3.png" alt="机器人"> 进入机器人语音对话
+    </button>
+
+    <!-- 机器人介绍视频全屏播放器 -->
+    <div id="robot-video-overlay" class="robot-video-overlay" onclick="closeRobotVideoOnBackdrop(event)">
+        <div class="robot-video-topbar">
+            <span class="robot-video-title">🎬 苏州双桥机器人介绍</span>
+            <button class="robot-video-close-btn" type="button" onclick="closeRobotVideo()">关闭视频</button>
+        </div>
+        <video id="robot-intro-video" class="robot-intro-video" controls onclick="event.stopPropagation()">
+            <source src="video/苏州双桥机器人介绍.mp4" type="video/mp4">
+            您的浏览器不支持 video 标签。
+        </video>
+        <div class="robot-video-bottom-tip">观看完成后自动进入语音对话</div>
+    </div>
+
+    <!-- 语音对话面板 - 视频播放完成后自动显示 -->
+    <div id="voice-dialog-panel" class="hud-panel voice-dialog-panel" style="display: none;">
+        <div class="panel-header">
+            <h3>🎤 机器人语音对话</h3>
+            <button class="panel-close-btn" type="button" onclick="closeVoiceDialog()">×</button>
+        </div>
+        
+        <div class="voice-dialog-status">
+            <span id="voice-status" class="voice-status">未连接</span>
+            <span id="voice-recording-indicator" class="voice-recording-indicator" style="display: none;">
+                <span class="voice-pulse"></span>
+                正在录音...
+            </span>
+        </div>
+        
+        <div id="voice-chat-container" class="voice-chat-container">
+            <div class="voice-message voice-message-system">欢迎与机器人沧朔对话！点击"开始对话"按钮开始语音交流。</div>
+        </div>
+        
+        <div class="voice-dialog-controls">
+            <div class="voice-btn-group">
+                <button id="btn-voice-connect" class="voice-btn voice-btn-primary" onclick="voiceDialogApp?.connect()">
+                    <span>🔌</span> 开始对话
+                </button>
+                <button id="btn-voice-start" class="voice-btn voice-btn-secondary" disabled onclick="voiceDialogApp?.startVoiceChat()">
+                    <span>🎤</span> 语音输入
+                </button>
+                <button id="btn-voice-stop" class="voice-btn voice-btn-danger" disabled onclick="voiceDialogApp?.stop()">
+                    <span>⏹️</span> 停止
+                </button>
+            </div>
+            
+            <div class="voice-text-input-group">
+                <input type="text" id="voice-text-input" class="voice-text-input" placeholder="输入文字消息，按回车发送..." onkeypress="if(event.key==='Enter') voiceDialogApp?.sendText()">
+                <button id="btn-voice-send" class="voice-btn voice-btn-primary" style="flex: 0 0 auto; padding: 10px 20px;" onclick="voiceDialogApp?.sendText()">
+                    发送
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部控制按钮 -->
+    <div class="hud-panel" id="bottom-controls">
+        <button class="control-btn img-btn" id="btn-view-model" type="button" onclick="viewModel(event)" title="查看模型及介绍">
+            <img src="查看模型及介绍.png" alt="查看模型及介绍">
+        </button>
+        <button class="control-btn season-btn" id="btn-spring" type="button" onclick="changeSeason('spring', event)" title="春">
+            <img src="spring.png" alt="春">
+        </button>
+        <button class="control-btn season-btn" id="btn-summer" type="button" onclick="changeSeason('summer', event)" title="夏">
+            <img src="summer.png" alt="夏">
+        </button>
+        <button class="control-btn season-btn" id="btn-autumn" type="button" onclick="changeSeason('autumn', event)" title="秋">
+            <img src="autumn.png" alt="秋">
+        </button>
+        <button class="control-btn season-btn" id="btn-winter" type="button" onclick="changeSeason('winter', event)" title="冬">
+            <img src="winter.png" alt="冬">
+        </button>
+
+    </div>
+
+    <!-- 历史介绍面板 -->
+    <div class="hud-panel" id="history-panel" style="display: none; right: 20px; top: 80px; width: 320px;">
+        <h3>历史介绍</h3>
+        <p>这里是古桥的历史介绍...</p>
+        <video controls width="100%" style="margin-top: 10px;">
+            <source src="history.mp4" type="video/mp4">
+            您的浏览器不支持 video 标签。
+        </video>
+        <button class="cmd-btn" type="button" onclick="toggleHistory()" style="margin-top: 10px;">关闭</button>
+    </div>
+
+    <script src="main.js"></script>
+    <!-- 语音对话模块 - 使用 ES6 模块 -->
+    <script type="module" src="voice-dialog.js"></script>
+    
+    <!-- Unity WebGL 初始化 -->
+    <script>
+        var unityInstance = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            var loading = document.getElementById('unity-loading');
+            var progressBar = document.getElementById('unity-progress-bar');
+            
+            // 更新进度条
+            function updateProgress(progress) {
+                if (progressBar) progressBar.style.width = (progress * 100) + '%';
+            }
+            
+            // 加载完成回调
+            function onLoadComplete(instance) {
+                unityInstance = instance;
+                if (loading) loading.style.display = 'none';
+                console.log('[Unity] 加载完成');
+                if (typeof onUnityReady === 'function') onUnityReady(instance);
+            }
+            
+            // 显示错误
+            function showError(msg) {
+                console.error('[Unity]', msg);
+                if (loading) {
+                    loading.innerHTML = '<div class="unity-loading-error">' + msg + '</div>';
+                }
+            }
+            
+            // 显示未部署提示
+            function showPlaceholder() {
+                console.warn('[Unity] Build 文件未找到');
+                if (loading) {
+                    loading.innerHTML = 
+                        '<div class="unity-loading-placeholder">' +
+                        '<div style="font-size:18px;margin-bottom:10px;">🎮 Unity WebGL 未部署</div>' +
+                        '<div style="font-size:14px;">请将 WebGL 构建文件放入 Build 文件夹</div>' +
+                        '<div style="font-size:12px;margin-top:10px;color:#888;">详细说明见 Build/README.md</div>' +
+                        '</div>';
+                }
+                if (typeof onUnityReady === 'function') onUnityReady(null);
+            }
+            
+            // 尝试新版 Unity 2020+
+            var scriptNew = document.createElement('script');
+            scriptNew.src = 'Build/Build.loader.js';
+            scriptNew.onload = function() {
+                console.log('[Unity] 检测到新版 Unity');
+                var config = {
+                    dataUrl: "Build/Build.data.gz",
+                    frameworkUrl: "Build/Build.framework.js.gz", 
+                    codeUrl: "Build/Build.wasm.gz",
+                    streamingAssetsUrl: "StreamingAssets",
+                    companyName: "YourCompany",
+                    productName: "SuzhouShuangqiao",
+                    productVersion: "1.0"
+                };
+                createUnityInstance(document.getElementById('unity-canvas'), config, updateProgress)
+                    .then(onLoadComplete)
+                    .catch(function(e) { showError('加载失败: ' + e); });
+            };
+            scriptNew.onerror = function() {
+                // 尝试旧版 Unity
+                var scriptOld = document.createElement('script');
+                scriptOld.src = 'Build/UnityLoader.js';
+                scriptOld.onload = function() {
+                    console.log('[Unity] 检测到旧版 Unity');
+                    var config = {
+                        dataUrl: "Build/Build.data.unityweb",
+                        frameworkUrl: "Build/Build.wasm.framework.unityweb",
+                        codeUrl: "Build/Build.wasm.code.unityweb",
+                        streamingAssetsUrl: "StreamingAssets",
+                        companyName: "YourCompany",
+                        productName: "SuzhouShuangqiao",
+                        productVersion: "1.0"
+                    };
+                    UnityLoader.instantiate("#unity-canvas", config);
+                    // 旧版检测完成
+                    setTimeout(function() {
+                        if (window.unityInstance) onLoadComplete(window.unityInstance);
+                    }, 1000);
+                };
+                scriptOld.onerror = showPlaceholder;
+                document.body.appendChild(scriptOld);
+            };
+            document.body.appendChild(scriptNew);
+        });
+
+        // 窗口大小调整
+        window.addEventListener('resize', function() {
+            if (unityInstance) {
+                unityInstance.SendMessage('WebGLBridge', 'OnBrowserResize', 
+                    window.innerWidth + ',' + window.innerHeight);
+            }
+        });
+    </script>
+</body>
+</html>

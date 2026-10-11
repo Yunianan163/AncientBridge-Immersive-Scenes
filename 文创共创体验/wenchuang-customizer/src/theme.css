@@ -1,0 +1,1652 @@
+/* =============================================================================
+   古风主题层 —— 「双桥记」
+   -----------------------------------------------------------------------------
+   主题取自项目讲述的两座明代古桥：
+
+     苏州 · 周庄双桥（世德桥 · 永安桥）
+       明万历年间（1573—1619），一石拱、一石梁，一圆一方、一横一竖，
+       桥洞交叠形似旧时钥匙，俗称「钥匙桥」。
+       世德桥由里人徐松泉、徐竹溪出资，永安桥由徐正吾出资。
+       陈逸飞油画《故乡的回忆》使之名扬海内。
+
+     贵州 · 福泉葛镜桥
+       明万历年间，平越人葛镜倾尽家资，历时三十余载、三毁三建，
+       于麻哈江绝壁之上起拱、借江心一礁石下脚，成二墩三孔石拱桥。
+       初名「太平桥」，云贵总督张鹤鸣改名并撰《葛镜桥碑记》，
+       明神宗御赐「义垂千古」匾额。俗称「豆腐桥」。
+       茅以升誉为「北有赵州桥，南有葛镜桥」。
+
+   两桥的公共语汇 → 本主题的取色依据：
+     · 同为**青石**砌筑（花岗石 / 石灰岩）      → --stone
+     · 同属**明万历**，同见题刻、碑记、匾额     → --cinnabar（朱砂印色）
+     · 一跨江南**市河**、一跨黔中**麻哈江**     → --water（水色）
+     · 一在**水乡**、一在**绝壁峡谷**           → --mountain（山色）· --tile（黛瓦）
+
+   -----------------------------------------------------------------------------
+   ⚠️ 本文件只负责**视觉**，不改任何结构、类名与交互。
+      它在 App.tsx 里 **最后** import，靠层叠顺序覆盖 App.css / studio.css
+      里那套暗色玻璃配色 —— 所以改主题不必去动那两个底座文件。
+   ========================================================================== */
+
+:root {
+  /* ---------------------------------------------- 纸 —— 宣纸 / 绢本（页面底） */
+  --paper: #ece3d0;
+  --paper-lit: #f6f0e2;
+  --paper-deep: #ddd1b6;
+
+  /* ------------------------------------------------- 墨 —— 题跋 / 正文 */
+  --ink: #2b2721;
+  --ink-2: #4c463c;
+  --ink-3: #6f6858;
+  --ink-4: #978e7b;
+
+  /* --------------------------------- 朱砂 —— 印章 / 强调（明万历 · 题刻） */
+  --cinnabar: #a8352b;
+  --cinnabar-lit: #c04a3b;
+  --cinnabar-soft: rgba(168, 53, 43, 0.12);
+
+  /* ------------------------------------------- 青石 —— 两桥同为青石砌筑 */
+  --stone: #6d7a76;
+  --stone-lit: #8d9a94;
+
+  /* -------------------------------------- 水色（江南）· 山色（黔）· 黛瓦 */
+  --water: #5b8a91;
+  --mountain: #5a6a50;
+  --tile: #454a51;
+  /* 赭金 —— 葛镜桥那侧崖壁的土色。苏州用青碧（--water）、葛镜用赭金（--ochre），
+     这一组"两桥各一色"只用在**来源标记与装饰**上，不掺进主色板。 */
+  --ochre: #96702c;
+
+  /* ------------------------------------- 面板 —— 半透宣纸（裱好的册页） */
+  --panel: rgba(243, 236, 220, 0.92);
+  --panel-hover: rgba(234, 225, 206, 0.97);
+  --panel-solid: rgba(247, 241, 228, 0.98);
+  --panel-inset: rgba(72, 60, 42, 0.06);
+  --panel-inset-2: rgba(72, 60, 42, 0.12);
+  --line-soft: rgba(74, 62, 44, 0.13);
+  --line: rgba(74, 62, 44, 0.24);
+  --line-strong: rgba(74, 62, 44, 0.42);
+  --shadow-soft: rgba(56, 42, 24, 0.14);
+  --shadow: rgba(56, 42, 24, 0.24);
+
+  /* ------------------------------------------- 裱纸白（浮在纸上的那一档）
+     底座 studio.css / App.css 是用 rgba(255,255,255,α) 铺浮层的（卡片、输入框、投放区）。
+     纯白压在暖宣纸上，会把纸**提亮成一档冷白** —— 实测右卷册的卡片是 #f4f3ee，
+     左卷册底纸是 #e5dfd1，两块并排就"一冷一暖"，看着不像一套东西。
+     这里给出暖裱纸白：仍然比底纸亮一档（层次保留），但不再偏冷。 */
+  --paper-lift: rgba(253, 248, 237, 0.42);
+  --paper-lift-2: rgba(255, 252, 244, 0.55);
+  --paper-emboss: rgba(255, 252, 244, 0.55);
+
+  /* -------------------------------------- 画布默认底色：绢本（浅绢）
+     原来这里是 #3f4a4c「墨青」—— 一个偏冷的蓝绿灰。整页是暖宣纸，
+     中区那一大块冷色就成了"在暖纸上挖了个冷洞"，是这页最扎眼的一处不协调。
+     现在默认浅绢（#e0d3b6），画心与两侧宣纸连成一张裱好的卷册；
+     更要紧的是中区那层长卷白描（BridgeBackdrop，靠 --scene-ink 翻明暗）
+     压在深色画底上根本看不见，换浅绢之后才真正读得出来。
+     想要白瓷的强反差可以在「配置 → 画底」里换松墨 / 焦墨，预设都还在。
+     ⚠️ 改这里要同步改 Scene.tsx 的 useState 与 Toolbar 的 BG_PRESETS（三处同一色）。 */
+  --scene-bg: #e0d3b6;
+
+  /* ------------------------------------------------------------ 字体 */
+  /* 刻意只用系统自带的宋/楷 —— 与项目「离线永远可用」的原则一致（studioEnv 同理），
+     不引任何网络字体。Windows 有宋体/楷体，macOS 有宋体-简/楷体-简，都能落到。 */
+  --font-song: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', '宋体', serif;
+  --font-kai: 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', 'FangSong', '仿宋', serif;
+
+  /* ------------------------------------- 宣纸帘纹（纯 CSS，无外部资源） */
+  --paper-grain:
+    repeating-linear-gradient(90deg, rgba(120, 100, 70, 0.035) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(0deg, rgba(120, 100, 70, 0.022) 0 1px, transparent 1px 5px);
+
+  /* ------------------------------------------------ 明式回纹（阶梯纹）带 */
+  --fret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10'%3E%3Cpath d='M0 9H4V3H8V9H12V6H16' fill='none' stroke='%23a8352b' stroke-width='1' stroke-opacity='0.5'/%3E%3C/svg%3E");
+
+  /* 面板统一描边 / 阴影，方便一处调 */
+  --panel-border: 1px solid var(--line);
+  --panel-shadow: 0 6px 22px var(--shadow-soft), 0 1px 0 var(--paper-emboss) inset;
+}
+
+/* ==========================================================================
+   0. 全局：把底座的无衬线换成宋体，并统一选中色
+   ========================================================================== */
+
+#root,
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-song);
+}
+
+::selection {
+  background: var(--cinnabar-soft);
+  color: var(--cinnabar);
+}
+
+/* 面板里的滚动条也换成墨色，别露出一条白塑料管 */
+.studio-dock::-webkit-scrollbar-thumb,
+.color-controls::-webkit-scrollbar-thumb {
+  background: var(--panel-inset-2);
+}
+
+/* ==========================================================================
+   1. 顶部题签（原 Toolbar）
+   —— 做成一幅横披：左端朱砂印，中间楷体大字，右侧一排木匣式按钮
+   ========================================================================== */
+
+.toolbar {
+  background: var(--panel);
+  background-image: var(--paper-grain);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 6px 20px rgba(56, 42, 24, 0.16);
+  backdrop-filter: blur(12px) saturate(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(1.05);
+}
+
+/* 卷轴下沿的明式回纹 */
+.toolbar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 5px;
+  background-image: var(--fret);
+  background-repeat: repeat-x;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.toolbar-content h1 {
+  font-family: var(--font-kai);
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.16em;
+  text-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+/* 标题前的朱砂小印（钥匙形 + 三孔桥，两桥的合体符号） */
+.toolbar-plaque {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.toolbar-seal {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: linear-gradient(160deg, var(--cinnabar-lit), var(--cinnabar));
+  box-shadow: 0 2px 6px rgba(140, 45, 35, 0.35);
+  color: #fdf7ea;
+}
+
+.toolbar-seal svg { display: block; }
+
+/* 副题（两桥名） */
+.toolbar-title-sub {
+  font-family: var(--font-song);
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--ink-3);
+  letter-spacing: 0.3em;
+  white-space: nowrap;
+}
+
+.toolbar-model-name {
+  font-family: var(--font-song);
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--ink-2);
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--panel-inset);
+}
+
+.toolbar-bg-picker {
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel-inset);
+  box-shadow: none;
+}
+
+.toolbar-bg-picker:hover {
+  background: var(--panel-inset-2);
+  border-color: var(--line-strong);
+}
+
+.config-button {
+  background: var(--panel-inset);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--ink-2);
+}
+
+.config-button:hover {
+  background: var(--panel-inset-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/* 选中态一律用朱砂 —— 像盖了一方印 */
+.config-button.is-active {
+  background: var(--cinnabar-soft);
+  border-color: rgba(168, 53, 43, 0.65);
+  color: var(--cinnabar);
+}
+
+.config-menu {
+  background: var(--panel-solid);
+  background-image: var(--paper-grain);
+  border: var(--panel-border);
+  border-radius: 3px;
+  box-shadow: 0 12px 32px var(--shadow);
+  color: var(--ink);
+}
+
+.config-menu-header {
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.config-menu-header h3 {
+  font-family: var(--font-kai);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+}
+
+.config-toggle {
+  color: var(--ink-2);
+}
+
+.config-toggle:hover .toggle-slider { background: var(--panel-inset-2); }
+
+.toggle-slider {
+  background: var(--panel-inset-2);
+  border: 1px solid var(--line);
+}
+
+.toggle-slider::before {
+  background: var(--paper-lit);
+  box-shadow: 0 1px 3px rgba(56, 42, 24, 0.3);
+}
+
+.config-toggle input[type="checkbox"]:checked + .toggle-slider {
+  background: rgba(168, 53, 43, 0.7);
+  border-color: var(--cinnabar);
+}
+
+.config-reset-button {
+  background: linear-gradient(180deg, var(--cinnabar-lit), var(--cinnabar));
+  color: #fdf7ea;
+  border-radius: 3px;
+  font-family: var(--font-song);
+  letter-spacing: 0.1em;
+  box-shadow: 0 2px 0 rgba(110, 32, 24, 0.4);
+}
+
+.config-reset-button:hover {
+  background: linear-gradient(180deg, #cc5545, var(--cinnabar-lit));
+  box-shadow: 0 3px 0 rgba(110, 32, 24, 0.4);
+}
+
+/* 画底预设色：一排小色块，取的是两桥的自然色 */
+.bg-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+
+.bg-preset {
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bg-preset:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px var(--shadow-soft);
+}
+
+.bg-preset.is-active {
+  border-color: var(--cinnabar);
+  box-shadow: 0 0 0 1px var(--cinnabar);
+}
+
+.bg-presets-label {
+  grid-column: 1 / -1;
+  font-size: 0.7rem;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.1rem;
+}
+
+/* 灯光面板 */
+.lighting-menu {
+  background: var(--panel-solid);
+  border-color: var(--line);
+  box-shadow: 0 12px 32px var(--shadow);
+}
+
+.lighting-reset {
+  color: var(--ink-2);
+  background: var(--panel-inset);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.lighting-reset:hover:not(:disabled) {
+  background: var(--panel-inset-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/* ==========================================================================
+   2. 左侧「配色」卷册（原 ColorControls）
+   ========================================================================== */
+
+.color-controls {
+  background: var(--panel);
+  background-image: var(--paper-grain);
+  color: var(--ink);
+  border-right: 1px solid var(--line);
+  box-shadow: 4px 0 20px var(--shadow-soft);
+}
+
+.color-controls-title {
+  font-family: var(--font-kai);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.18em;
+  color: var(--ink);
+  padding-left: 0.5rem;
+  border-left: 3px solid var(--cinnabar);
+  line-height: 1.1;
+}
+
+.color-controls-close {
+  border: 1px solid var(--line);
+  background: var(--panel-inset);
+  color: var(--ink-2);
+}
+
+.color-controls-close:hover {
+  background: var(--panel-inset-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.color-controls-toggle,
+.studio-dock-toggle {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  box-shadow: 0 4px 14px var(--shadow-soft);
+}
+
+.color-controls-toggle:hover,
+.studio-dock-toggle:hover {
+  background: var(--panel-hover);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.color-controls-toggle.is-open,
+.studio-dock-toggle.is-open {
+  background: linear-gradient(160deg, var(--cinnabar-lit), var(--cinnabar));
+  border-color: rgba(110, 32, 24, 0.5);
+  color: #fdf7ea;
+}
+
+.control-group.is-selectable:hover {
+  background: var(--panel-inset);
+  border-color: var(--line);
+}
+
+.control-group.is-selected {
+  background: var(--cinnabar-soft);
+  border-color: rgba(168, 53, 43, 0.55);
+  box-shadow: 0 0 0 1px rgba(168, 53, 43, 0.2);
+}
+
+.control-group label { color: var(--ink-2); }
+
+.material-name {
+  font-family: var(--font-song);
+  color: var(--ink);
+}
+
+.material-description { color: var(--ink-4); }
+
+.control-group input[type="color"] {
+  border: 2px solid var(--line);
+  border-radius: 3px;
+  background: var(--paper-lit);
+}
+
+.control-group input[type="color"]:hover { border-color: var(--line-strong); }
+
+/* 表面质感：选中档盖朱砂 */
+.finish-controls { border-top: 1px solid var(--line-soft); }
+
+.finish-controls-label { color: var(--ink); letter-spacing: 0.08em; }
+
+.finish-controls-value { color: var(--cinnabar); }
+
+.finish-chip {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--panel-inset);
+  color: var(--ink-2);
+}
+
+.finish-chip:hover {
+  background: var(--panel-inset-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.finish-chip.is-active {
+  background: var(--cinnabar-soft);
+  border-color: rgba(168, 53, 43, 0.7);
+  color: var(--cinnabar);
+  font-weight: 600;
+}
+
+.finish-hint { color: var(--ink-4); }
+
+/* ==========================================================================
+   3. 器物册（原 ModelSelector）
+   —— 2026-10-09 并进左侧「配色」卷册，成为面板里的第一段；
+      不再自带底板（底板由外层面板给），只留一条分节线。
+   ========================================================================== */
+
+.model-selector {
+  color: var(--ink);
+  margin: 0 0 1.25rem;
+  padding: 0 0 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.model-selector-header h3 {
+  font-family: var(--font-kai);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.model-dropdown {
+  background: var(--panel-inset);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+.model-dropdown:focus { border-color: var(--cinnabar); }
+
+.model-dropdown option {
+  background: var(--paper-lit);
+  color: var(--ink);
+}
+
+.model-name {
+  font-family: var(--font-song);
+  color: var(--ink);
+}
+
+.model-description { color: var(--ink-3); }
+
+.color-dot {
+  border: 1px solid var(--line-strong);
+  border-radius: 1px;
+}
+
+/* ==========================================================================
+   4. 智能推荐（RecommendPanel）—— 附在「器物」那一段的最后
+   --------------------------------------------------------------------------
+   它在左栏里只有 ~250px 可用宽度，所以：字号统一压到 0.7~0.85rem、
+   卡片里不并排超过两列、长文案靠 <p> 自然折行。
+   配色沿用主题令牌：推荐度好 = 朱砂，中 = 石青，差 = 淡墨。
+   ========================================================================== */
+
+.recommend-panel {
+  color: var(--ink);
+  margin: 0 0 1.25rem;
+  padding: 0.15rem 0 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.recommend-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.recommend-head h3 {
+  font-family: var(--font-kai);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+  padding-left: 0.45rem;
+  border-left: 3px solid var(--cinnabar);
+  line-height: 1.1;
+  margin: 0;
+}
+
+.recommend-badge {
+  font-family: var(--font-song);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  padding: 0.1rem 0.34rem;
+  border-radius: 1px;
+  background: var(--cinnabar-soft);
+  border: 1px solid rgba(168, 53, 43, 0.42);
+  color: var(--cinnabar);
+  white-space: nowrap;
+}
+
+.recommend-toggle {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 0.1rem 0.2rem;
+  font-family: var(--font-song);
+  font-size: 0.68rem;
+  color: var(--ink-4);
+  cursor: pointer;
+  text-decoration: underline dotted currentColor;
+  text-underline-offset: 3px;
+}
+
+.recommend-toggle:hover { color: var(--cinnabar); }
+
+.recommend-hint {
+  margin: 0;
+  font-family: var(--font-song);
+  font-size: 0.72rem;
+  line-height: 1.65;
+  color: var(--ink-4);
+}
+
+/* —— 特征小标签 —— */
+.recommend-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  margin-bottom: 0.6rem;
+}
+
+.recommend-chip {
+  font-family: var(--font-song);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.34rem;
+  border-radius: 1px;
+  border: 1px solid var(--line-soft);
+  background: var(--panel-inset);
+  color: var(--ink-3);
+}
+
+.recommend-chip b {
+  color: var(--ink);
+  font-weight: 600;
+  margin-left: 0.15rem;
+}
+
+/* —— 推荐卡片 —— */
+.recommend-list {
+  list-style: none;
+  margin: 0 0 0.7rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.recommend-card {
+  border: 1px solid var(--line-soft);
+  border-radius: 2px;
+  background: var(--panel-inset);
+  padding: 0.5rem 0.55rem;
+}
+
+.recommend-card.is-active {
+  border-color: rgba(168, 53, 43, 0.55);
+  background: var(--cinnabar-soft);
+  box-shadow: 0 0 0 1px rgba(168, 53, 43, 0.16);
+}
+
+.recommend-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.34rem;
+}
+
+.recommend-rank {
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  display: grid;
+  place-items: center;
+  border-radius: 1px;
+  background: var(--ink);
+  color: var(--paper-lit);
+  font-family: var(--font-song);
+  font-size: 0.62rem;
+  line-height: 1;
+}
+
+.recommend-glyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--ink-2);
+}
+
+.recommend-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-song);
+  font-size: 0.8rem;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recommend-score {
+  flex: none;
+  font-family: var(--font-song);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--cinnabar);
+  font-variant-numeric: tabular-nums;
+}
+
+.recommend-card.is-active .recommend-score { color: var(--cinnabar-lit); }
+
+.recommend-bar {
+  height: 4px;
+  border-radius: 1px;
+  background: var(--panel-inset-2);
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.recommend-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--ink-4);
+  transition: width 0.35s ease;
+}
+
+.recommend-bar.is-good .recommend-bar-fill { background: linear-gradient(90deg, var(--cinnabar), var(--cinnabar-lit)); }
+.recommend-bar.is-mid .recommend-bar-fill { background: var(--water); }
+.recommend-bar.is-low .recommend-bar-fill { background: var(--ink-4); }
+
+.recommend-reason {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-song);
+  font-size: 0.7rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.recommend-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.recommend-use,
+.recommend-ghost {
+  font-family: var(--font-song);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  padding: 0.22rem 0.5rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.recommend-use {
+  border: 1px solid rgba(110, 32, 24, 0.5);
+  background: linear-gradient(160deg, var(--cinnabar-lit), var(--cinnabar));
+  color: #fdf7ea;
+}
+
+.recommend-use:hover:not(:disabled) { filter: brightness(1.08); }
+
+.recommend-use:disabled {
+  background: var(--panel-inset-2);
+  border-color: var(--line-soft);
+  color: var(--ink-4);
+  cursor: default;
+}
+
+.recommend-ghost {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.recommend-ghost:hover {
+  border-color: var(--line-strong);
+  color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+}
+
+/* —— 「其他可选模型」折叠区 —— */
+.recommend-rest {
+  border-top: 1px dashed var(--line-soft);
+  padding-top: 0.45rem;
+  margin-bottom: 0.5rem;
+}
+
+.recommend-rest > summary {
+  font-family: var(--font-song);
+  font-size: 0.7rem;
+  color: var(--ink-3);
+  cursor: pointer;
+  list-style: none;
+}
+
+.recommend-rest > summary::-webkit-details-marker { display: none; }
+.recommend-rest > summary::before { content: '▸ '; color: var(--ink-4); }
+.recommend-rest[open] > summary::before { content: '▾ '; }
+.recommend-rest > summary:hover { color: var(--cinnabar); }
+
+.recommend-rest ul {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.recommend-rest li {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.24rem 0.3rem;
+  border-radius: 1px;
+  background: var(--panel-inset);
+  border: 1px solid transparent;
+}
+
+.recommend-rest li.is-active {
+  border-color: rgba(168, 53, 43, 0.45);
+  background: var(--cinnabar-soft);
+}
+
+.recommend-rest-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-song);
+  font-size: 0.7rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recommend-rest-score {
+  flex: none;
+  font-family: var(--font-song);
+  font-size: 0.68rem;
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+
+.recommend-rest button {
+  flex: none;
+  font-family: var(--font-song);
+  font-size: 0.62rem;
+  padding: 0.14rem 0.36rem;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.recommend-rest button:hover {
+  border-color: var(--line-strong);
+  color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+}
+
+.recommend-foot {
+  margin: 0;
+  font-family: var(--font-song);
+  font-size: 0.66rem;
+  line-height: 1.6;
+  color: var(--ink-4);
+}
+
+/* ==========================================================================
+   5. 「改造提示词」弹框 —— 用 portal 挂到 body，避开祖先的 backdrop-filter 造成的定位陷阱
+   --------------------------------------------------------------------------
+   ⚠️ 两处都不能想当然：
+   · **必须用 portal**。左栏面板链路上有 `backdrop-filter`，它会成为 fixed 后代的包含块，
+     直接写 position:fixed 会被关在面板内部、也会被面板的 overflow 裁掉。
+   · **z-index 要压过面板层**。本项目面板层级是 1000~1030
+     （App.css / studio.css 里那些 1000 / 1001 / 1003 / 1006 / 1007 / 1020 / 1030）；
+     一开始按「浮层随便给个 90」写，结果遮罩只盖住了画布，左右两个面板照旧亮着（截图验证发现）。
+   ========================================================================== */
+
+.prompt-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+  background: rgba(20, 18, 14, 0.5);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.prompt-modal-card {
+  width: min(30rem, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 1rem 1.1rem 0.9rem;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  background-image: var(--paper-grain);
+  box-shadow: 0 18px 48px var(--shadow), 0 1px 0 var(--paper-emboss) inset;
+  color: var(--ink);
+}
+
+.prompt-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.prompt-modal-head h4 {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-kai);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  padding-left: 0.5rem;
+  border-left: 3px solid var(--cinnabar);
+}
+
+.prompt-modal-head button {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--panel-inset);
+  color: var(--ink-2);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.prompt-modal-head button:hover {
+  border-color: var(--line-strong);
+  color: var(--cinnabar);
+}
+
+.prompt-modal-intro,
+.prompt-modal-summary,
+.prompt-modal-note {
+  margin: 0;
+  font-family: var(--font-song);
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+
+.prompt-modal-intro { font-size: 0.76rem; margin-bottom: 0.5rem; }
+.prompt-modal-summary { font-size: 0.68rem; margin: 0.45rem 0 0; }
+.prompt-modal-note { font-size: 0.66rem; margin-top: 0.6rem; color: var(--ink-4); }
+
+.prompt-modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  margin-bottom: 0.5rem;
+}
+
+.prompt-modal-tags span {
+  font-family: var(--font-song);
+  font-size: 0.64rem;
+  padding: 0.1rem 0.36rem;
+  border-radius: 1px;
+  background: var(--cinnabar-soft);
+  border: 1px solid rgba(168, 53, 43, 0.35);
+  color: var(--cinnabar);
+}
+
+.prompt-modal-text {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: rgba(255, 253, 246, 0.7);
+  font-family: var(--font-song);
+  font-size: 0.76rem;
+  line-height: 1.85;
+  color: var(--ink);
+}
+
+.prompt-modal-text:focus { outline: none; border-color: rgba(168, 53, 43, 0.55); }
+
+.prompt-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.prompt-modal-copy,
+.prompt-modal-go {
+  font-family: var(--font-song);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  padding: 0.4rem 0.9rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.prompt-modal-copy {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.prompt-modal-copy:hover { border-color: var(--line-strong); color: var(--cinnabar); }
+
+.prompt-modal-go {
+  border: 1px solid rgba(110, 32, 24, 0.5);
+  background: linear-gradient(160deg, var(--cinnabar-lit), var(--cinnabar));
+  color: #fdf7ea;
+}
+
+.prompt-modal-go:hover { filter: brightness(1.08); }
+
+/* ==========================================================================
+   6. 爆炸视图（原 ExplodeControls）
+   ========================================================================== */
+
+.explode-controls {
+  background: var(--panel);
+  background-image: var(--paper-grain);
+  border: var(--panel-border);
+  border-radius: 3px;
+  color: var(--ink);
+  box-shadow: var(--panel-shadow);
+}
+
+.explode-controls-header h3 {
+  font-family: var(--font-kai);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.reset-button {
+  background: var(--panel-inset);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--ink-2);
+}
+
+.reset-button:hover {
+  background: var(--panel-inset-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.explode-label { color: var(--ink-2); }
+
+.explode-range-labels { color: var(--ink-4); }
+
+.explode-description { color: var(--ink-3); }
+
+.explode-slider { background: var(--panel-inset-2); }
+
+.explode-slider::-webkit-slider-thumb {
+  background: var(--cinnabar);
+  box-shadow: 0 1px 4px rgba(56, 42, 24, 0.35);
+}
+
+.explode-slider::-moz-range-thumb {
+  background: var(--cinnabar);
+  box-shadow: 0 1px 4px rgba(56, 42, 24, 0.35);
+}
+
+.preset-button {
+  background: var(--panel-inset);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--ink-2);
+}
+
+.preset-button:hover {
+  background: var(--panel-inset-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/* ==========================================================================
+   7. 右侧「文创定制」长卷（原 studio.css 那一套）
+   ========================================================================== */
+
+.studio-dock {
+  background: var(--panel);
+  background-image: var(--paper-grain);
+  border: var(--panel-border);
+  border-radius: 3px;
+  color: var(--ink);
+  box-shadow: var(--panel-shadow);
+}
+
+.studio-dock-head h2 {
+  font-family: var(--font-kai);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  padding-left: 0.5rem;
+  border-left: 3px solid var(--cinnabar);
+  line-height: 1.1;
+}
+
+.studio-dock-head p { color: var(--ink-3); }
+
+.studio-dock-close {
+  border: 1px solid var(--line);
+  background: var(--panel-inset);
+  color: var(--ink-2);
+  border-radius: 3px;
+}
+
+.studio-dock-close:hover {
+  background: var(--panel-inset-2);
+  color: var(--ink);
+}
+
+.studio-card {
+  border: 1px solid var(--line-soft);
+  border-radius: 3px;
+  background: var(--paper-lift);
+}
+
+.studio-card-head h3 {
+  font-family: var(--font-kai);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.studio-card-tag {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--ink-3);
+}
+
+.studio-empty { color: var(--ink-4); }
+
+/* ---------------------------------------------------------------- 输入 */
+
+.studio-input,
+.studio-form input,
+.studio-form textarea {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--paper-lift-2);
+  color: var(--ink);
+}
+
+.studio-input::placeholder,
+.studio-form input::placeholder,
+.studio-form textarea::placeholder {
+  color: var(--ink-4);
+}
+
+.studio-input:focus,
+.studio-form input:focus,
+.studio-form textarea:focus {
+  border-color: var(--cinnabar);
+  box-shadow: 0 0 0 2px var(--cinnabar-soft);
+}
+
+.studio-chips { gap: 0.32rem; }
+
+.studio-chip {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--panel-inset);
+  color: var(--ink-2);
+  letter-spacing: 0.04em;
+}
+
+.studio-chip:hover:not(:disabled) {
+  background: var(--cinnabar-soft);
+  border-color: rgba(168, 53, 43, 0.5);
+  color: var(--cinnabar);
+}
+
+/* ---------------------------------------------------------------- 按钮 */
+
+.studio-primary {
+  background: linear-gradient(180deg, var(--cinnabar-lit), var(--cinnabar));
+  color: #fdf7ea;
+  border: 1px solid rgba(110, 32, 24, 0.5);
+  border-radius: 3px;
+  font-family: var(--font-song);
+  letter-spacing: 0.18em;
+  box-shadow: 0 2px 0 rgba(110, 32, 24, 0.4), 0 4px 14px rgba(168, 53, 43, 0.22);
+}
+
+.studio-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #cc5545, var(--cinnabar-lit));
+  box-shadow: 0 3px 0 rgba(110, 32, 24, 0.4), 0 6px 18px rgba(168, 53, 43, 0.3);
+}
+
+.studio-ghost {
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel-inset);
+  color: var(--ink-2);
+}
+
+.studio-ghost:hover:not(:disabled) {
+  background: var(--panel-inset-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/* 危险操作 —— 用更深沉的赭色，与「主行动」的朱砂区分开 */
+.studio-ghost.is-danger {
+  border-color: rgba(140, 47, 34, 0.5);
+  color: #8c2f22;
+}
+
+.studio-ghost.is-danger:hover { background: rgba(140, 47, 34, 0.12); }
+
+/* -------------------------------------------------- 上传 / 预览 / 提示 */
+
+.studio-drop {
+  border: 1px dashed var(--line-strong);
+  border-radius: 3px;
+  background: var(--paper-lift);
+  color: var(--ink-3);
+}
+
+.studio-drop:hover {
+  border-color: var(--cinnabar);
+  background: var(--cinnabar-soft);
+  color: var(--cinnabar);
+}
+
+.studio-preview {
+  border-radius: 2px;
+  background: var(--panel-inset-2);
+}
+
+.studio-preview-badge {
+  border-radius: 2px;
+  background: rgba(43, 39, 33, 0.74);
+  color: #dfe9d5;
+}
+
+/* 文生图 / 图生图 切换 + 预览小标签：和其余控件共用纸面 + 朱砂那一套语言 */
+.studio-modes {
+  border-radius: 3px;
+  background: var(--panel-inset-2);
+}
+
+.studio-mode {
+  border-radius: 2px;
+  color: var(--ink-4);
+  font-family: var(--font-kai);
+  letter-spacing: 0.08em;
+}
+
+.studio-mode:hover:not(:disabled):not(.is-active) {
+  background: var(--panel-hover);
+  color: var(--ink);
+}
+
+.studio-mode.is-active {
+  background: var(--cinnabar);
+  color: #f7f1e4;
+}
+
+.studio-preview-tag {
+  border-radius: 2px;
+  background: rgba(43, 39, 33, 0.74);
+  color: #f3ecdc;
+}
+
+/* -------------------------------------------- 场景截图素材库 */
+
+.studio-snaps-empty {
+  border: 1px dashed var(--line-strong);
+  border-radius: 3px;
+  color: var(--ink-4);
+}
+
+.studio-snap-pick {
+  border: 1px solid var(--line-soft);
+  border-radius: 3px;
+  background: var(--panel-inset-2);
+}
+
+.studio-snap-pick:hover { border-color: var(--cinnabar); }
+
+.studio-snap.is-active .studio-snap-pick {
+  border-color: var(--cinnabar);
+  box-shadow: 0 0 0 2px var(--cinnabar-soft);
+}
+
+.studio-snap-scene {
+  color: var(--ink-3);
+  font-family: var(--font-kai);
+  letter-spacing: 0.06em;
+}
+
+/* 素材卡按来源场景带一点"两桥各自的颜色"：苏州 → 青碧（江南水色），
+   葛镜 → 赭金（黔中崖壁）。只染场景名和它前面那颗小痣 ——
+   主色板不动，整页仍然是一套；颜色由组件挂的 data-scene 决定。 */
+.studio-snap[data-scene='suzhou'] .studio-snap-scene { color: #3f7d6a; }
+
+.studio-snap[data-scene='gejin'] .studio-snap-scene { color: var(--ochre); }
+
+.studio-snap[data-scene='suzhou'] .studio-snap-scene::before,
+.studio-snap[data-scene='gejin'] .studio-snap-scene::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  vertical-align: 1px;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.studio-snap-del {
+  border-radius: 2px;
+  background: rgba(43, 39, 33, 0.74);
+  color: #f3ecdc;
+}
+
+.studio-snap-del:hover { background: rgba(140, 47, 34, 0.9); }
+
+/* 「AI 二次创作」入口与它的编辑区：沿用朱砂作强调色，跟素材选中态是同一套语言 */
+.studio-snap-ai {
+  border-radius: 2px;
+  background: rgba(43, 39, 33, 0.74);
+  color: #f3ecdc;
+}
+
+.studio-snap-ai:hover { background: var(--cinnabar); }
+
+.studio-redraw {
+  border: 1px solid var(--cinnabar);
+  border-radius: 3px;
+  background: var(--cinnabar-soft);
+}
+
+.studio-redraw-head img {
+  border: 1px solid var(--line-soft);
+  border-radius: 2px;
+}
+
+.studio-redraw-meta strong {
+  color: var(--ink);
+  font-family: var(--font-kai);
+  letter-spacing: 0.06em;
+}
+
+.studio-redraw-meta span { color: var(--ink-4); }
+
+.studio-redraw-close {
+  border-radius: 2px;
+  background: rgba(43, 39, 33, 0.16);
+  color: var(--ink-2);
+}
+
+.studio-redraw-close:hover { background: rgba(140, 47, 34, 0.85); color: #f3ecdc; }
+
+.studio-hint {
+  border: 1px solid rgba(168, 53, 43, 0.45);
+  border-radius: 3px;
+  background: var(--cinnabar-soft);
+  color: #8c2f22;
+}
+
+.studio-hint-dot { background: var(--cinnabar); }
+
+.studio-hint-cancel {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+.studio-hint-cancel:hover { background: var(--panel-inset-2); }
+
+/* ------------------------------------------------- 「可贴图部位」选择条 */
+
+.studio-regions {
+  border: 1px solid var(--line-soft);
+  border-radius: 3px;
+  background: var(--paper-lift);
+}
+
+.studio-region-head { color: var(--ink-2); }
+
+.studio-region-tip { color: var(--ink-4); }
+
+/* 部位名 —— 用青石色（两桥同为青石砌筑），和朱砂的行动色分开 */
+.studio-region-chip {
+  border: 1px solid rgba(109, 122, 118, 0.55);
+  border-radius: 2px;
+  background: rgba(109, 122, 118, 0.14);
+  color: #4c5b57;
+}
+
+.studio-region-chip:hover:not(:disabled) {
+  background: rgba(109, 122, 118, 0.28);
+  border-color: var(--stone);
+  color: #3d4a47;
+}
+
+.studio-region-chip.is-locked {
+  border-style: dashed;
+  border-color: var(--line);
+  background: transparent;
+  color: var(--ink-4);
+}
+
+.studio-region-note { color: var(--ink-4); }
+
+.studio-region-warn { color: #8c5a20; }
+
+.studio-region-parts { color: var(--ink-4); }
+
+.studio-region-parts code {
+  border-radius: 2px;
+  background: var(--panel-inset-2);
+  color: var(--ink-2);
+}
+
+/* ------------------------------------------------------- 提示条 / 报错 */
+
+.studio-error {
+  border: 1px solid rgba(168, 53, 43, 0.5);
+  border-radius: 3px;
+  background: var(--cinnabar-soft);
+  color: #8c2f22;
+}
+
+.studio-notice {
+  border: 1px solid rgba(91, 138, 145, 0.5);
+  border-radius: 3px;
+  background: rgba(91, 138, 145, 0.14);
+  color: #3f666c;
+}
+
+.studio-success {
+  border: 1px solid rgba(90, 106, 80, 0.5);
+  border-radius: 3px;
+  background: rgba(90, 106, 80, 0.14);
+  color: #46543d;
+}
+
+.studio-success code {
+  border-radius: 2px;
+  background: rgba(43, 39, 33, 0.1);
+}
+
+/* ---------------------------------------------------------------- 滑块 */
+
+.studio-slider-head { color: var(--ink-2); }
+
+.studio-slider-value { color: var(--cinnabar); }
+
+.studio-slider input[type='range'] { background: var(--panel-inset-2); }
+
+.studio-slider input[type='range']::-webkit-slider-thumb {
+  background: var(--cinnabar);
+  box-shadow: 0 1px 4px rgba(56, 42, 24, 0.35);
+}
+
+.studio-slider input[type='range']::-moz-range-thumb {
+  background: var(--cinnabar);
+  box-shadow: 0 1px 4px rgba(56, 42, 24, 0.35);
+}
+
+/* ------------------------------------------------------ 当前贴图目标 */
+
+.studio-target img {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--panel-inset);
+}
+
+.studio-target-name { color: var(--ink); }
+
+.studio-target-meta { color: var(--ink-4); }
+
+.studio-target-meta.is-warn { color: #8c5a20; }
+
+/* ------------------------------- Canvas 内的错误牌（桌面足够小，用宣纸底） */
+
+.scene-error-badge {
+  border: 1px solid rgba(168, 53, 43, 0.55);
+  border-radius: 3px;
+  background: rgba(247, 241, 228, 0.96);
+  color: var(--ink);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
+}
+
+.scene-error-badge strong { color: var(--cinnabar); }
+
+.scene-error-badge .scene-error-hint { color: var(--ink-3); }
+
+/* ==========================================================================
+   8. 「桥志」卡片（BridgeNotes 组件）—— 讲清这个定制器取自哪两座桥
+   ========================================================================== */
+
+.bridge-notes-toggle {
+  flex: none;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--panel-inset);
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.bridge-notes-toggle:hover {
+  background: var(--cinnabar-soft);
+  border-color: rgba(168, 53, 43, 0.5);
+  color: var(--cinnabar);
+}
+
+.bridge-notes-lead {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+
+.bridge-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.bridge-notes-item {
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--line);
+}
+
+.bridge-notes-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.bridge-notes-name {
+  font-family: var(--font-kai);
+  font-weight: 700;
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+
+/* 年代小印 */
+.bridge-notes-era {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  padding: 0.05rem 0.3rem;
+  border-radius: 2px;
+  background: var(--cinnabar-soft);
+  color: var(--cinnabar);
+}
+
+.bridge-notes-place {
+  font-size: 0.66rem;
+  color: var(--ink-4);
+  letter-spacing: 0.06em;
+}
+
+.bridge-notes-body {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.bridge-notes-body p {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.75;
+  color: var(--ink-2);
+  text-align: justify;
+}
+
+/* ==========================================================================
+   9. 装饰层 —— 双桥与葛镜桥的长卷（BridgeBackdrop 组件）
+   ========================================================================== */
+
+.bridge-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 5;               /* 压住 canvas，但低于所有面板（1000+） */
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* 底部水墨长卷：左半是江南水乡的双桥，右半是黔中绝壁上的葛镜桥 */
+.bridge-scroll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: min(32vh, 300px);
+  /* 淡墨/浓墨由画底明暗自动切换（Scene.tsx 把 --scene-ink 写到 :root 上），
+     这样「画底」预设里浅色的宣纸、绢本也不会让长卷整个消失 */
+  color: var(--scene-ink, #d3c7ab);
+  opacity: 0.3;
+}
+
+/* 顶部两角的回纹角饰。
+   ⚠️ 不能用 left: 0.5rem —— 左边「配色」面板（宽 280）和右边工作台（宽 350）
+      正好压住画面两个上角，角饰会被整个盖住。所以按面板宽度往里让开，
+      退到画布区的内侧；窄屏（≤1100px）由下面的媒体查询直接收掉。 */
+.bridge-corner {
+  position: absolute;
+  width: 92px;
+  height: 92px;
+  color: var(--scene-ink, #d3c7ab);
+  opacity: 0.34;
+}
+
+.bridge-corner.is-left { left: 296px; top: 5.4rem; }
+.bridge-corner.is-right { right: 374px; top: 5.4rem; transform: scaleX(-1); }
+
+/* 底部题跋（两桥的关键史实，小字，居中）。
+   做成**墨底签条**而不是纯文字：画布底色由用户在「配置 → 画底」里随便换，
+   纯文字在浅底上会彻底看不见；墨底 + 米字两种底上都立得住。 */
+.bridge-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 0.5rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  white-space: nowrap;
+  padding: 0.22rem 0.95rem;
+  border-radius: 2px;
+  background: rgba(26, 31, 31, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(232, 223, 201, 0.16);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  font-family: var(--font-song);
+  font-size: 0.72rem;
+  letter-spacing: 0.26em;
+  color: #e8dfc9;
+}
+
+.bridge-caption .bridge-caption-sep {
+  color: #d0705a;
+  opacity: 0.95;
+  letter-spacing: 0;
+}
+
+@media (max-width: 1100px) {
+  /* 小屏时底部被工作台占满，题跋和长卷都收掉，别糊成一团 */
+  .bridge-caption { display: none; }
+  .bridge-scroll { height: 120px; opacity: 0.16; }
+  .bridge-corner { display: none; }
+}

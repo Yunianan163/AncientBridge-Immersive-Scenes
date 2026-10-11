@@ -1,0 +1,33 @@
+/* =============================================================================
+   全局基座
+   -----------------------------------------------------------------------------
+   配色 / 字体本身定义在 theme.css 的 :root 里（那一份才是「双桥记」主题），
+   这里只做最基础的重置。
+
+   ⚠️ 刻意**不引任何网络字体**（原先这里 @import 了 Google Fonts 的 Inter）。
+      原因与 three/studioEnv.ts 拒用 CDN HDRI 是同一个：这个项目要求离线可用，
+      字体一旦拉不到会 FOUT 成系统默认的无衬线，「古风」立刻塌掉。
+      改用系统自带的宋体 / 楷体栈（见 theme.css 的 --font-song / --font-kai）。
+   ========================================================================== */
+
+:root {
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* 页面本身就是一幅宣纸；表单控件（下拉框、取色器）也走浅色 */
+  color-scheme: light;
+  color: var(--ink, #2b2721);
+  background-color: var(--paper, #ece3d0);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--paper, #ece3d0);
+}

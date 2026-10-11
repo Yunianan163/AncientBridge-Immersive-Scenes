@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>葛镜桥 · 三维高斯场景</title>
+<link rel="stylesheet" href="./css/style.css" />
+
+<!-- 依赖全部本地化，无需联网；改 CDN 或换版本只需改这一处 -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/three/addons/",
+    "@mkkellogg/gaussian-splats-3d": "./vendor/gaussian-splats-3d.module.js"
+  }
+}
+</script>
+</head>
+<body>
+
+<canvas id="viewport"></canvas>
+
+<!-- ============================================================ 加载遮罩 -->
+<div class="loadmask" id="loadmask">
+  <div class="loadcard">
+    <div class="loadcard__tag">明 · 万历 · 三孔石拱桥</div>
+    <h1 class="loadcard__title">葛镜桥 · 三维高斯场景</h1>
+    <p class="loadcard__meta">
+      <b>2,825,198</b> 高斯点
+      <i></i> 247.9 MB
+      <i></i> SH 1 阶
+    </p>
+
+    <div class="bar"><i class="bar__fill" id="bar-fill"></i></div>
+
+    <div class="loadcard__row">
+      <span id="load-stage">正在初始化…</span>
+      <span id="load-pct">0%</span>
+    </div>
+
+    <p class="loadcard__tip" id="load-tip">首次加载需下载约 248 MB 模型数据</p>
+  </div>
+</div>
+
+<!-- ================================================================ 信息栏 -->
+<header class="hud" id="hud">
+  <div class="hud__title">
+    <span class="pulse"></span>
+    <b>葛镜桥</b>
+    <span class="hud__file">scene.ply</span>
+  </div>
+  <div class="hud__desc">明代万历三孔石拱桥 · 高斯泼溅重建 · 2,825,198 点</div>
+  <div class="hud__keys">
+    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 飞行
+    <kbd>Q</kbd><kbd>E</kbd> 升降
+    <kbd>Shift</kbd> 加速
+    <span class="sep"></span>
+    <kbd>拖动</kbd> 转向
+    <kbd>D</kbd> 退出飞行
+    <kbd>R</kbd> 视角
+    <kbd>H</kbd> 性能
+  </div>
+</header>
+
+<!-- ============================================================== 性能面板 -->
+<aside class="stats" id="stats"></aside>
+
+<!-- ============================================================== 截图按钮 -->
+<!-- 当前画面 → 文创素材库（逻辑见 js/snapshot.js）。位置与苏州双桥保持一致，都放右上角。 -->
+<button class="snapbtn" id="snapbtn" type="button"
+        title="截图并存入文创素材库" aria-label="截图并存入文创素材库">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4.6 7.4h2.7l1.4-2.2h6.6l1.4 2.2h2.7A1.6 1.6 0 0 1 21 9v9.4a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 18.4V9a1.6 1.6 0 0 1 1.6-1.6z" />
+    <circle cx="12" cy="13.4" r="3.5" />
+  </svg>
+</button>
+
+<!-- ================================================================ 背景音乐 -->
+<!-- 可暂停的背景音乐（徐梦圆 - CHINA-孤舟）。点一下播放、再点暂停。 -->
+<button class="musicbtn" id="musicbtn" type="button"
+        title="播放背景音乐" aria-label="播放背景音乐">
+  <svg class="ic-play" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M8 5v14l11-7z"/>
+  </svg>
+  <svg class="ic-pause" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M6 5h4v14H6z"/><path d="M14 5h4v14h-4z"/>
+  </svg>
+</button>
+<audio id="bgm" src="./music/徐梦圆-CHINA-孤舟_624237536.mp3" preload="auto"></audio>
+
+<!-- ============================================================== 语音对话 -->
+<!-- 点一下开始和「沧朔」实时语音对话。
+     协议（豆包实时语音 3.0 / Seeduplex）见 js/voice.js，凭据只在本机代理
+     tools/voice-proxy.mjs 里，浏览器拿不到密钥。按钮与背景音乐键同族，挂在它正下方。 -->
+<button class="voicebtn" id="voicebtn" type="button"
+        title="语音对话：和沧朔聊聊葛镜桥" aria-label="开始语音对话">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <rect x="9" y="3" width="6" height="11" rx="3" />
+    <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0" />
+    <path d="M12 18v3" />
+    <path d="M8.5 21h7" />
+  </svg>
+</button>
+
+<section class="voicepanel" id="voicepanel" aria-label="语音对话">
+  <header class="voicepanel__head">
+    <span class="voicepanel__dot" id="voice-dot"></span>
+    <b>葛镜桥 · 语音讲解</b>
+    <button class="voicepanel__x" id="voice-close" type="button" aria-label="结束对话">×</button>
+  </header>
+
+  <p class="voicepanel__status" id="voice-status" data-kind="dim">未连接</p>
+
+  <div class="voicepanel__log" id="voice-log"></div>
+
+  <div class="voicepanel__meter"><i id="voice-meter"></i></div>
+
+  <div class="voicepanel__actions">
+    <button class="voicepanel__btn" id="voice-mic" type="button">静音</button>
+    <button class="voicepanel__btn" id="voice-commit" type="button"
+            title="模型迟迟不判停、不回复时点它，强制结束本轮">说完了</button>
+  </div>
+
+  <button class="voicepanel__hangup" id="voice-hangup" type="button">结束对话</button>
+</section>
+
+<!-- ================================================================ 工具栏 -->
+<footer class="dock" id="dock">
+  <button data-act="drone" title="无人机自由飞行：WASD 移动，Q/E 升降 (D)" aria-label="无人机飞行">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="5.6" r="2.1"/><path d="M12 7.7v4.6"/><path d="M7.4 5.4 9 7"/><path d="M16.6 5.4 15 7"/><path d="M5.2 12.3a2.3 2.3 0 1 0 4.6 0"/><path d="M14.2 12.3a2.3 2.3 0 1 0 4.6 0"/><circle cx="6.4" cy="9.4" r="1.4"/><circle cx="17.6" cy="9.4" r="1.4"/><path d="M7.6 9.6 12 12.3l4.4-2.7"/></svg>
+    <span>飞行</span>
+  </button>
+
+  <button data-act="reset" title="重置视角 (R)" aria-label="重置视角">
+    <svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.8-6.3"/><path d="M3 4.5V10h5.5"/></svg>
+    <span>视角</span>
+  </button>
+
+  <button data-act="frame" title="适配整个场景 (F)" aria-label="适配整个场景">
+    <svg viewBox="0 0 24 24"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9"/><path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9"/><path d="M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/></svg>
+    <span>全景</span>
+  </button>
+
+  <button data-act="spin" title="自动环绕 (空格)" aria-label="自动环绕">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8a9.2 9.2 0 0 1 9.2 9.2"/><path d="M12 21.2A9.2 9.2 0 0 1 2.8 12"/></svg>
+    <span>环绕</span>
+  </button>
+
+  <button data-act="sh" title="视角相关光泽 开/关" aria-label="视角相关光泽">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+    <span>光泽</span>
+  </button>
+
+  <button data-act="stats" title="性能面板 (H)" aria-label="性能面板">
+    <svg viewBox="0 0 24 24"><path d="M5.5 19V11.5"/><path d="M12 19V5"/><path d="M18.5 19v-5.5"/></svg>
+    <span>性能</span>
+  </button>
+
+  <button data-act="fullscreen" title="全屏" aria-label="全屏">
+    <svg viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg>
+    <span>全屏</span>
+  </button>
+</footer>
+
+<div class="roamhint" id="dronehint">
+  <b>无人机飞行</b>
+  <span>W A S D 移动</span>
+  <i></i>
+  <span>Q 升 / E 降 · Shift 加速</span>
+  <i></i>
+  <span>拖动画面转向 · 滚轮调速</span>
+  <i></i>
+  <span><kbd>D</kbd> 退出飞行</span>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="./js/main.js"></script>
+<script type="module">
+  // 背景音乐按钮：点一下播放、再点暂停（逻辑见 js/music.js）
+  import('./js/music.js').then(({ initMusic }) => initMusic());
+</script>
+</body>
+</html>

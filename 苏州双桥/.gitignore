@@ -1,0 +1,20 @@
+# 苏州双桥 —— 版本控制忽略清单
+
+# 语音凭据（绝不能提交）
+.env
+
+# 依赖
+node_modules/
+
+# 历史归档目录（本地保留，不进版本库）
+改进版/
+
+# Unity 构建产物（单份 ~296MB，且与 WebGL/、WebGL最新/ 重复）
+# 如需给别人可运行的包，另行打包，不要靠版本库传二进制
+Build/
+WebGL/Build/
+WebGL最新/Build/
+
+# 日志与临时文件
+*.log
+last-command.txt
