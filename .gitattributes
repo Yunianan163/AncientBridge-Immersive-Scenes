@@ -1,0 +1,12 @@
+# ---------------------------------------------------------------------------
+# Git LFS —— 存放超过 GitHub 100 MB 单文件上限的三维资源
+#
+# 这两个文件是场景能真正跑起来的必要条件，但体积过大只能走 LFS。
+# 克隆前请先安装 Git LFS：https://git-lfs.com  然后 `git lfs install`
+# 未安装 LFS 时克隆下来的是指针文件（几十字节的文本），场景加载不出来。
+#
+# 对应文件说明见 README「未随仓库分发的资源」一节。
+# ---------------------------------------------------------------------------
+
+"苏州双桥/Build/WebGL.data.gz" filter=lfs diff=lfs merge=lfs -text
+"贵州葛镜桥/models/scene.ply" filter=lfs diff=lfs merge=lfs -text
