@@ -39,7 +39,7 @@
 ├── 贵州葛镜桥/                3DGS 重建点云漫游
 │   ├── index.html
 │   ├── js/                   ui.js / config.js 等
-│   ├── models/               重建产物（见「未随仓库分发」）
+│   ├── models/               重建产物（scene.ply 走 Git LFS）
 │   ├── tools/serve.py        静态服务（8123）
 │   └── README.md             该模块的详细说明与操作表
 ├── 文创共创体验/
@@ -78,6 +78,7 @@ npm run dev:all
 
 - **Node.js** ≥ 18（文创前端用 Vite 7 / React 19，需要较新运行时）
 - **Python** 3.8+（仅葛镜桥的静态服务与工具链需要）
+- **Git LFS**（克隆时需要，场景数据与点云模型走 LFS 托管）
 - **浏览器** 支持 WebGL 2 的桌面版 Chrome / Edge。移动端未适配。
 
 ---
@@ -101,16 +102,35 @@ cp .env.example .env
 
 ---
 
-## ⚠️ 未随仓库分发的资源
+## 📦 大体积资源（Git LFS）
 
-受 GitHub 单文件 100 MB 限制，以下两个关键体积文件**没有入库**。克隆后项目可以启动、页面可以打开，但对应场景的三维内容会缺失：
+两个关键体积文件超过 GitHub 单文件 100 MB 上限，已通过 **Git LFS** 托管，克隆后可完整运行：
 
-| 文件 | 体积 | 缺失后的表现 | 获取方式 |
-| --- | --- | --- | --- |
-| `苏州双桥/Build/WebGL.data.gz` | ~287 MB | Unity 场景加载不出来（页面 UI 与语音正常） | 从 Unity 工程重新构建，或另行获取 |
-| `贵州葛镜桥/models/scene.ply` | ~248 MB | 葛镜桥页面没有点云模型 | 三维重建产物，需原始摄影测量数据 |
+| 文件 | 体积 | 用途 |
+| --- | --- | --- |
+| `苏州双桥/Build/WebGL.data.gz` | 286 MB | Unity 场景数据，缺失则三维场景加载不出来 |
+| `贵州葛镜桥/models/scene.ply` | 248 MB | 3DGS 重建点云，缺失则葛镜桥页面没有模型 |
 
-其余 `Build/` 下的 `WebGL.loader.js`、`WebGL.wasm.gz`、`WebGL.framework.js.gz` 均已入库（合计约 9.7 MB），是场景能加载起来的最小集。
+其余 `Build/` 下的 `WebGL.loader.js`、`WebGL.wasm.gz`、`WebGL.framework.js.gz` 是普通文件（合计约 9.7 MB）。
+
+### 克隆方式
+
+**请先安装 Git LFS**，否则这两个文件会是指针（几十字节的文本），场景打不开：
+
+```bash
+git lfs install          # 每台机器只需一次
+git clone https://github.com/Yunianan163/AncientBridge-Immersive-Scenes.git
+```
+
+如果已经克隆完才想起安装 LFS，补拉即可：
+
+```bash
+git lfs install
+git lfs pull
+```
+
+> 两个文件合计约 534 MB。仓库的 LFS 存储与下载流量受 GitHub 账号额度限制，频繁克隆可能触发配额。
+
 
 ---
 
